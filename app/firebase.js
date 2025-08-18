@@ -7,6 +7,7 @@ import {
   signOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updatePassword,
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -18,10 +19,7 @@ const firebaseConfig = {
   appId: "1:998564690654:web:e65371fa213ecec699a04f"
 };
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
-
-// Auth
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 
@@ -51,6 +49,17 @@ export const registerWithEmail = async (email, password) => {
     await createUserWithEmailAndPassword(auth, email, password);
   } catch (error) {
     console.error("Error al crear la cuenta:", error);
+    throw error;
+  }
+};
+
+// Cambiar contraseña (usuario logueado con email)
+export const changePassword = async (newPassword) => {
+  if (!auth.currentUser) throw new Error("No hay usuario logueado");
+  try {
+    await updatePassword(auth.currentUser, newPassword);
+  } catch (error) {
+    console.error("Error al cambiar contraseña:", error);
     throw error;
   }
 };
