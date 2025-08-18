@@ -1,8 +1,7 @@
 // crearUsuarios.js
-require("dotenv").config(); // carga las variables de .env
 const admin = require("firebase-admin");
 
-// Inicializar Firebase Admin
+// Inicializar Firebase Admin usando variables de entorno
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -22,7 +21,7 @@ const usuarios = [
   { email: "usuario3@lambda.com", password: "contraseña123" },
   { email: "usuario4@lambda.com", password: "contra123" },
   { email: "usuario5@lambda.com", password: "contra123" },
-  { email: "frantomasino@hotmail.com", password: "contra123" },
+  { email: "frantoma@lambda.com", password: "contra123" },
 ];
 
 async function crearUsuarios() {

@@ -1,4 +1,3 @@
-// app/firebase.js
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -10,15 +9,17 @@ import {
   updatePassword,
 } from "firebase/auth";
 
+// Configuración de tu proyecto Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAQ0FZnhkUS21KeLF2_SD6DvQec4wT2OUU",
   authDomain: "stl-viewer-cac54.firebaseapp.com",
   projectId: "stl-viewer-cac54",
   storageBucket: "stl-viewer-cac54.appspot.com",
   messagingSenderId: "998564690654",
-  appId: "1:998564690654:web:e65371fa213ecec699a04f"
+  appId: "1:998564690654:web:e65371fa213ecec699a04f",
 };
 
+// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
@@ -38,8 +39,10 @@ export const loginWithEmail = async (email, password) => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
-    console.error("Error al iniciar sesión con email:", error);
-    throw error;
+    const code = error.code;
+    if (code === "auth/wrong-password") throw { code, message: "Contraseña incorrecta" };
+    if (code === "auth/user-not-found") throw { code, message: "Usuario no encontrado" };
+    throw { code: code || "unknown", message: error.message || "Error desconocido" };
   }
 };
 
