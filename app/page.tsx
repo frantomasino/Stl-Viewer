@@ -11,6 +11,72 @@ import {
 } from "./firebase";
 import STLViewer from "./STLViewer";
 
+// -------------------- Dropdown de perfil --------------------
+function ProfileDropdown({ user, handleLogout, setShowChangePassword }: any) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm"
+      >
+        {user.photoURL && (
+          <img
+            src={user.photoURL}
+            alt="Foto de perfil"
+            className="w-6 h-6 rounded-full"
+          />
+        )}
+        <span className="truncate max-w-[100px]">{user.displayName || user.nickname || user.email}</span>
+        <svg
+          className={`w-4 h-4 transform transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-1 w-48 bg-white rounded shadow-lg z-50 top-full">
+          <div className="px-4 py-2 border-b">
+            <p className="font-semibold truncate">{user.displayName || user.nickname || user.email}</p>
+          </div>
+
+          <ul className="flex flex-col">
+            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Paciente 1</li>
+            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Paciente 2</li>
+          </ul>
+
+          <div className="border-t">
+            <button
+              onClick={() => {
+                setShowChangePassword(true);
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-gray-100"
+            >
+              Actualizar contraseña
+            </button>
+            <button
+              onClick={() => {
+                handleLogout();
+                setOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// -------------------- Componente principal --------------------
 export default function Page() {
   const [user, setUser] = useState<any>(null);
   const [identifier, setIdentifier] = useState("");
@@ -62,99 +128,85 @@ export default function Page() {
 
   // -------------------- Pantalla login --------------------
   if (!user) {
-  return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-  <div className="bg-white p-10 rounded-xl shadow-lg flex flex-col items-center gap-2 w-80">
-    
-    {/* Imagen arriba de todo */}
-    <img
-      src="/lambda-fulldev1.jpg"
-      alt="Logo"
-      className="w-100 h-100 object-contain mb-1"
-    />
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="bg-white p-10 rounded-xl shadow-lg flex flex-col items-center gap-2 w-80">
+          <img
+            src="/lambda-fulldev1.jpg"
+            alt="Logo"
+            className="w-100 h-100 object-contain mb-1"
+          />
+          <h2 className="text-2xl font-bold text-gray-700">Bienvenido</h2>
+          <p className="text-gray-500 text-center">
+            Inicia sesión para acceder al STL Viewer
+          </p>
 
-    <h2 className="text-2xl font-bold text-gray-700">Bienvenido</h2>
-    <p className="text-gray-500 text-center">
-      Inicia sesión para acceder al STL Viewer
-    </p>
+          <div className="flex flex-col gap-3 w-full mt-4">
+            <input
+              type="text"
+              placeholder="Email o usuario"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              className="px-4 py-2 border rounded"
+            />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="px-4 py-2 border rounded"
+            />
+            {error && <p className="text-red-500">{error}</p>}
 
-    <div className="flex flex-col gap-3 w-full mt-4">
-      <input
-        type="text"
-        placeholder="Email o usuario"
-        value={identifier}
-        onChange={(e) => setIdentifier(e.target.value)}
-        className="px-4 py-2 border rounded"
-      />
-      <input
-        type="password"
-        placeholder="Contraseña"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="px-4 py-2 border rounded"
-      />
-      {error && <p className="text-red-500">{error}</p>}
+            <button
+              onClick={async () => {
+                const m = await loginWithGoogle();
+                if (m !== true) setError(m);
+              }}
+              className="px-8 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors duration-200"
+            >
+              Iniciar sesión con Google
+            </button>
 
-      <button
-        onClick={async () => {
-          const m = await loginWithGoogle();
-          if (m !== true) setError(m);
-        }}
-        className="px-8 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors duration-200"
-      >
-        Iniciar sesión con Google
-      </button>
+            <button
+              onClick={handleEmailLogin}
+              className="px-8 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
+            >
+              Iniciar sesión con Email
+            </button>
 
-      <button
-        onClick={handleEmailLogin}
-        className="px-8 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
-      >
-        Iniciar sesión con Email
-      </button>
-
-      <button
-        onClick={handleFirestoreLogin}
-        className="px-8 py-3 bg-purple-500 text-white font-semibold rounded-lg hover:bg-purple-600"
-      >
-        Iniciar sesión con Usuario
-      </button>
-    </div>
-  </div>
-</div>
-
-
+            <button
+              onClick={handleFirestoreLogin}
+              className="px-8 py-3 bg-purple-500 text-white font-semibold rounded-lg hover:bg-purple-600"
+            >
+              Iniciar sesión con Usuario
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   // -------------------- Pantalla principal --------------------
   return (
     <div className="h-screen w-screen flex flex-col">
-      <div className="p-4 flex justify-between items-center bg-gray-200">
-        <div className="flex items-center gap-3">
-          {user.photoURL && (
-            <img
-              src={user.photoURL}
-              alt="Foto de perfil"
-              className="w-10 h-10 rounded-full"
-            />
-          )}
-          <span className="font-semibold">
-            Hola, {user.displayName || user.nickname || user.email}
-          </span>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Cerrar sesión
-        </button>
+      {/* Header reducido */}
+      <div className="relative w-full bg-gray-200 flex justify-end items-center h-12 px-4">
+        <ProfileDropdown
+          user={user}
+          handleLogout={handleLogout}
+          setShowChangePassword={setShowChangePassword}
+        />
       </div>
 
-      <div className="flex flex-col md:flex-row h-full">
+      {/* Contenido */}
+      <div className="flex flex-1 relative overflow-hidden">
+        {/* STL Viewer */}
         <div className="flex-1">
           <STLViewer />
         </div>
 
+        {/* Panel de cambio de contraseña */}
         {user.providerData?.some((p: any) => p.providerId === "password") &&
           showChangePassword && (
             <div className="p-4 bg-gray-100 w-full md:w-80">
