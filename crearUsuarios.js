@@ -28,6 +28,7 @@ const usersData = [
   { uid: "5", nickname: "lucas", email: "lucas@gmail.com", password: "lucas123", projects: ["p1"] },
   { uid: "6", nickname: "toma", email: "toma@gmail.com", password: "toma123", projects: ["p1"] },
   { uid: "7", nickname: "fran", email: "fran@gmail.com", password: "fran123", projects: ["p1"] },
+  { uid: "8", nickname: "pepe", email: "pepe@gmail.com", password: "pepe123", projects: ["p2"] }
 ];
 
 const projectsData = [

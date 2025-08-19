@@ -39,7 +39,7 @@ export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 
-// -------------------- Login con Google --------------------
+// -------------------- Login Google --------------------
 export const loginWithGoogle = async () => {
   try {
     await signInWithPopup(auth, provider);
@@ -50,7 +50,7 @@ export const loginWithGoogle = async () => {
   }
 };
 
-// -------------------- Login con Email/Contraseña (Firebase Auth) --------------------
+// -------------------- Login con Email/Contraseña  --------------------
 export const loginWithEmail = async (email, password) => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
@@ -78,7 +78,7 @@ export const loginWithFirestoreUser = async (identifier, password) => {
   try {
     const usersRef = collection(db, "users");
 
-    // Buscar por email
+    // Buscar   email
     const qEmail = query(usersRef, where("email", "==", identifier));
     let snapshot = await getDocs(qEmail);
     let userSnap = snapshot.docs[0];
