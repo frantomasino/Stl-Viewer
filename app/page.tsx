@@ -11,78 +11,15 @@ import {
 } from "./firebase";
 import STLViewer from "./STLViewer";
 
-// Shadcn UI (tu librería local)
+// Shadcn UI
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// -------------------- Dropdown de perfil --------------------
-function ProfileDropdown({ user, handleLogout, setShowChangePassword }) {
-  const [open, setOpen] = useState(false);
+// 👇 importamos tu UserProfile
+import { UserProfile } from "@/components/ui/user-profile";
 
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm"
-      >
-        {user.photoURL && (
-          <img src={user.photoURL} alt="Foto de perfil" className="w-6 h-6 rounded-full" />
-        )}
-        <span className="truncate max-w-[100px]">
-          {user.displayName || user.nickname || user.email}
-        </span>
-        <svg
-          className={`w-4 h-4 transform transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="absolute right-0 mt-1 w-48 bg-white rounded shadow-lg z-50 top-full">
-          <div className="px-4 py-2 border-b">
-            <p className="font-semibold truncate">
-              {user.displayName || user.nickname || user.email}
-            </p>
-          </div>
-
-          <ul className="flex flex-col">
-            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Paciente 1</li>
-            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">Paciente 2</li>
-          </ul>
-
-          <div className="border-t">
-            <button
-              onClick={() => {
-                setShowChangePassword(true);
-                setOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-100"
-            >
-              Actualizar contraseña
-            </button>
-            <button
-              onClick={() => {
-                handleLogout();
-                setOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
-            >
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// -------------------- Componente principal --------------------
 export default function Page() {
   const [user, setUser] = useState(null);
 
@@ -118,8 +55,6 @@ export default function Page() {
     const result = await loginWithFirestoreUser(trimmedIdentifier, password);
     if (typeof result === "string") {
       setError(result);
-    } else {
-      // onAuthStateChanged actualizará user
     }
     setIsLoading(false);
   };
@@ -148,7 +83,7 @@ export default function Page() {
     if (result === true) setUser(null);
   };
 
-  // -------------------- Pantalla login (UI estilo "Supabase", pero con Firebase) --------------------
+  // -------------------- Pantalla login --------------------
   if (!user) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center p-6 bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -272,11 +207,8 @@ export default function Page() {
     <div className="h-screen w-screen flex flex-col">
       {/* Header reducido */}
       <div className="relative w-full bg-gray-200 flex justify-end items-center h-12 px-4">
-        <ProfileDropdown
-          user={user}
-          handleLogout={handleLogout}
-          setShowChangePassword={setShowChangePassword}
-        />
+        {/* 👇 ahora usamos tu UserProfile */}
+        <UserProfile user={user} handleLogout={handleLogout} />
       </div>
 
       {/* Contenido */}
