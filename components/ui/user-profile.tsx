@@ -23,9 +23,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Settings, FileText, Camera, Users, Edit, LogOut } from "lucide-react"
+import { Edit, LogOut } from "lucide-react"
 
-export function UserProfile({ user, handleLogout }) {
+type UserProfileProps = {
+  user?: {
+    displayName?: string | null
+    email?: string | null
+    photoURL?: string | null
+  } | null
+  handleLogout?: () => void
+}
+
+export function UserProfile({ user, handleLogout }: UserProfileProps) {
   const [isEditingProfile, setIsEditingProfile] = useState(false)
 
   const [profile, setProfile] = useState({
@@ -47,13 +56,6 @@ export function UserProfile({ user, handleLogout }) {
       }))
     }
   }, [user])
-
-  const [stats] = useState({
-    filesAnalyzed: 127,
-    patientsManaged: 45,
-    photosCaptures: 89,
-    videoRecordings: 23,
-  })
 
   const handleSaveProfile = () => {
     console.log("[v0] Profile saved:", profile)
@@ -104,43 +106,26 @@ export function UserProfile({ user, handleLogout }) {
 
           <DropdownMenuSeparator />
 
-          {/* Stats */}
-          <div className="px-2 py-2">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <FileText className="h-3 w-3" />
-                <span>{stats.filesAnalyzed} Archivos</span>
-              </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Users className="h-3 w-3" />
-                <span>{stats.patientsManaged} Pacientes</span>
-              </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Camera className="h-3 w-3" />
-                <span>{stats.photosCaptures} Fotos</span>
-              </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Camera className="h-3 w-3" />
-                <span>{stats.videoRecordings} Videos</span>
-              </div>
-            </div>
-          </div>
-
-          <DropdownMenuSeparator />
-
           {/* Editar perfil */}
           <Dialog open={isEditingProfile} onOpenChange={setIsEditingProfile}>
             <DialogTrigger asChild>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                className="cursor-pointer hover:bg-gray-100"
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Editar Perfil</span>
               </DropdownMenuItem>
             </DialogTrigger>
+
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Editar Perfil</DialogTitle>
-                <DialogDescription>Actualizá tu información de perfil.</DialogDescription>
+                <DialogDescription>
+                  Actualizá tu información de perfil.
+                </DialogDescription>
               </DialogHeader>
+
               <div className="grid gap-4 py-4">
                 <div className="flex items-center justify-center">
                   <Avatar className="h-20 w-20">
@@ -160,7 +145,9 @@ export function UserProfile({ user, handleLogout }) {
                   <Input
                     id="name"
                     value={profile.name}
-                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, name: e.target.value })
+                    }
                   />
                 </div>
 
@@ -170,7 +157,9 @@ export function UserProfile({ user, handleLogout }) {
                     id="email"
                     type="email"
                     value={profile.email}
-                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, email: e.target.value })
+                    }
                   />
                 </div>
 
@@ -179,7 +168,9 @@ export function UserProfile({ user, handleLogout }) {
                   <Input
                     id="specialty"
                     value={profile.specialty}
-                    onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, specialty: e.target.value })
+                    }
                   />
                 </div>
 
@@ -188,7 +179,9 @@ export function UserProfile({ user, handleLogout }) {
                   <Input
                     id="institution"
                     value={profile.institution}
-                    onChange={(e) => setProfile({ ...profile, institution: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, institution: e.target.value })
+                    }
                   />
                 </div>
 
@@ -197,14 +190,19 @@ export function UserProfile({ user, handleLogout }) {
                   <Textarea
                     id="bio"
                     value={profile.bio}
-                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, bio: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditingProfile(false)}
+                >
                   Cancelar
                 </Button>
                 <Button onClick={handleSaveProfile}>Guardar</Button>
@@ -212,14 +210,11 @@ export function UserProfile({ user, handleLogout }) {
             </DialogContent>
           </Dialog>
 
-          {/* Configuración */}
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Configuración</span>
-          </DropdownMenuItem>
-
           {/* Cerrar sesión */}
-          <DropdownMenuItem onClick={handleLogout}>
+          <DropdownMenuItem
+            onClick={handleLogout}
+            className="cursor-pointer hover:bg-gray-100"
+          >
             <LogOut className="mr-2 h-4 w-4 text-red-500" />
             <span className="text-red-500">Cerrar sesión</span>
           </DropdownMenuItem>

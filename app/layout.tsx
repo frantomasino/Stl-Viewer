@@ -11,11 +11,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <head>
         <style>{`
 html {
@@ -25,7 +23,7 @@ html {
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body className="h-full">{children}</body>
     </html>
   )
 }
