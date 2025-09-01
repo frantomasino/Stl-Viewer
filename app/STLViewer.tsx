@@ -1,7 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
+import { useEffect, useState, useRef } from "react"
 import { RotateCcw, Circle, Square, Camera } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -26,9 +25,6 @@ type STLViewerProps = {
 export default function STLViewer({ user, handleLogout }: STLViewerProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedModel, setSelectedModel] = useState<string>("")
-
-  const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null)
-  const controlsRef = useRef<OrbitControls | null>(null)
 
   const [isRecording, setIsRecording] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -55,48 +51,24 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const resetView = useCallback(() => {
-    controlsRef.current?.reset()
-  }, [])
+  // --- Placeholder handlers (ya manejados en ThreeViewer) ---
+  const resetView = () => {
+    console.warn("Reset View ahora se maneja dentro de ThreeViewer")
+  }
 
-  const takeCapture = useCallback(() => {
-    if (!canvasEl) return
-    const a = document.createElement("a")
-    a.download = "capture.png"
-    a.href = canvasEl.toDataURL("image/png")
-    a.click()
-  }, [canvasEl])
+  const takeCapture = () => {
+    console.warn("Captura ahora se maneja dentro de ThreeViewer")
+  }
 
-  const startRecording = useCallback(() => {
-    if (!canvasEl || isRecording) return
-    const stream = canvasEl.captureStream(30)
-    const mr = new MediaRecorder(stream, { mimeType: "video/webm" })
-    chunksRef.current = []
-    mr.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data)
-    mr.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "video/webm" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = "grabacion.webm"
-      a.click()
-      URL.revokeObjectURL(url)
-    }
-    mr.start()
-    mediaRecorderRef.current = mr
+  const startRecording = () => {
+    console.warn("Grabación ahora se maneja dentro de ThreeViewer")
     setIsRecording(true)
-  }, [canvasEl, isRecording])
+  }
 
-  const stopRecording = useCallback(() => {
-    mediaRecorderRef.current?.stop()
-    mediaRecorderRef.current = null
+  const stopRecording = () => {
+    console.warn("Grabación ahora se maneja dentro de ThreeViewer")
     setIsRecording(false)
-  }, [])
-
-  const handleCanvasReady = useCallback((canvas: HTMLCanvasElement, controls: OrbitControls) => {
-    setCanvasEl(canvas)
-    controlsRef.current = controls
-  }, [])
+  }
 
   return (
     <SidebarProvider>
@@ -119,27 +91,40 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset
             </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              if (!isRecording) startRecording()
-              else stopRecording()
-            }}>
-              {isRecording ? <><Square className="w-4 h-4 mr-2" /> Detener</> : <><Circle className="w-4 h-4 mr-2" /> Grabar</>}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!isRecording) startRecording()
+                else stopRecording()
+              }}
+            >
+              {isRecording ? (
+                <>
+                  <Square className="w-4 h-4 mr-2" /> Detener
+                </>
+              ) : (
+                <>
+                  <Circle className="w-4 h-4 mr-2" /> Grabar
+                </>
+              )}
             </Button>
             <Button variant="outline" size="sm" onClick={takeCapture}>
               <Camera className="w-4 h-4 mr-2" />
               Captura
             </Button>
-            {selectedModel && <Badge variant="outline" className="ml-2">Seleccionado: {selectedModel}</Badge>}
+            {selectedModel && (
+              <Badge variant="outline" className="ml-2">
+                Seleccionado: {selectedModel}
+              </Badge>
+            )}
           </div>
         </div>
 
         {/* Viewer */}
         <div className="flex-1 relative min-h-0">
           <div className="absolute inset-0">
-            <ThreeViewer
-              modelPath={selectedPath ? encodeURI(selectedPath) : undefined}
-              onCanvasReady={handleCanvasReady}
-            />
+            <ThreeViewer modelPath={selectedPath ? encodeURI(selectedPath) : undefined} />
           </div>
         </div>
       </SidebarInset>

@@ -3,16 +3,21 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { ViewportGizmo } from "three-viewport-gizmo";
 
 type MeshSettings = { color: string; opacity: number };
 type ExplodeItem = { mesh: THREE.Mesh; original: THREE.Vector3; direction: THREE.Vector3 };
 
-const ThreeViewer: React.FC = () => {
+type ThreeViewerProps = {
+  modelPath?: string;
+};
+
+const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
-  // Three refs
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -20,30 +25,19 @@ const ThreeViewer: React.FC = () => {
   const currentRootRef = useRef<THREE.Object3D | null>(null);
   const gizmoRef = useRef<any>(null);
 
-  // Clipping + selección
-  const planesRef = useRef<THREE.Plane[]>([]);
-  const clipStateRef = useRef<Record<string, any>>({});
   const selectableMeshesRef = useRef<THREE.Mesh[]>([]);
   const meshSettingsRef = useRef<Map<THREE.Mesh, MeshSettings>>(new Map());
-  const raycasterRef = useRef(new THREE.Raycaster());
-  const mouseRef = useRef(new THREE.Vector2());
-  const selectedMeshIndexRef = useRef<number>(0);
-
-  // Explode
-  const explodeFactorRef = useRef<number>(0);
   const meshOriginalPositionsRef = useRef<ExplodeItem[]>([]);
 
-  // GUI
-  const guiRef = useRef<GUI | null>(null);
-  const meshSelectorControllerRef = useRef<any>(null);
-  const colorControllerRef = useRef<any>(null);
-  const transparencyControllerRef = useRef<any>(null);
+  const planesRef = useRef<THREE.Plane[]>([]);
+  const clipStateRef = useRef<Record<string, any>>({});
 
+  const guiRef = useRef<GUI | null>(null);
   const guiParamsRef = useRef({
-    color: "#FFC107",
+    color: "#cccccc",
     opacity: 1,
-    clipSelectedOnly: false,
     selectedMesh: 0,
+    explode: 0,
   });
 
   const getThree = () => ({
@@ -51,7 +45,6 @@ const ThreeViewer: React.FC = () => {
     camera: cameraRef.current!,
     renderer: rendererRef.current!,
     controls: controlsRef.current!,
-    planes: planesRef.current,
   });
 
   // ---------- init ----------
@@ -66,29 +59,27 @@ const ThreeViewer: React.FC = () => {
       60,
       mountRef.current.clientWidth / mountRef.current.clientHeight,
       0.05,
-      500
+      5000
     );
     camera.position.set(5, 5, 5);
     cameraRef.current = camera;
 
-    // preserveDrawingBuffer => screenshot ok
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      stencil: true,
       preserveDrawingBuffer: true,
     });
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     renderer.localClippingEnabled = true;
-    renderer.sortObjects = true;
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.enablePan = false;
+    controls.enablePan = true;   // ✅ mover
+    controls.enableRotate = true; // ✅ rotar
+    controls.enableZoom = true;   // ✅ zoom
     controlsRef.current = controls;
 
-    // Gizmo
     const gizmo = new ViewportGizmo(camera, renderer, { placement: "bottom-right", type: "sphere" });
     gizmo.attachControls(controls);
     gizmoRef.current = gizmo;
@@ -118,44 +109,6 @@ const ThreeViewer: React.FC = () => {
     planesRef.current = planes;
     clipStateRef.current = clipState;
 
-    // Modelo DEMO (sin GLTF)
-    createDemoModel();
-
-    // Picking
-    const onCanvasClick = (event: MouseEvent) => {
-      const { renderer, camera } = getThree();
-      const rect = renderer.domElement.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      mouseRef.current.set(x, y);
-
-      raycasterRef.current.setFromCamera(mouseRef.current, camera);
-      const intersects = raycasterRef.current.intersectObjects(
-        selectableMeshesRef.current.filter((m) => {
-          const mat = m.material as THREE.MeshStandardMaterial;
-          return m.visible !== false && (mat.opacity ?? 1) > 0.001;
-        })
-      );
-
-      if (intersects.length > 0) {
-        const mesh = intersects[0].object as THREE.Mesh;
-        const idx = selectableMeshesRef.current.indexOf(mesh);
-        selectedMeshIndexRef.current = idx;
-        guiParamsRef.current.selectedMesh = idx;
-
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        guiParamsRef.current.color = `#${mat.color.getHexString()}`;
-        guiParamsRef.current.opacity = mat.opacity;
-
-        meshSelectorControllerRef.current?.setValue(idx);
-        colorControllerRef.current?.setValue(guiParamsRef.current.color);
-        transparencyControllerRef.current?.setValue(guiParamsRef.current.opacity);
-
-        updateClippingState();
-      }
-    };
-    renderer.domElement.addEventListener("click", onCanvasClick);
-
     // Render loop
     let raf = 0;
     const render = () => {
@@ -166,7 +119,6 @@ const ThreeViewer: React.FC = () => {
     };
     render();
 
-    // Resize
     const onResize = () => {
       if (!mountRef.current) return;
       const { clientWidth, clientHeight } = mountRef.current;
@@ -181,7 +133,6 @@ const ThreeViewer: React.FC = () => {
     return () => {
       ro.disconnect();
       cancelAnimationFrame(raf);
-      renderer.domElement.removeEventListener("click", onCanvasClick);
       guiRef.current?.destroy();
       gizmoRef.current?.dispose?.();
       controls.dispose();
@@ -195,134 +146,97 @@ const ThreeViewer: React.FC = () => {
       meshOriginalPositionsRef.current = [];
       currentRootRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---------- DEMO MODEL (sin GLTF) ----------
-  function createDemoModel() {
+  // ---------- Cargar modelo externo ----------
+  function loadModel(path: string) {
     const scene = sceneRef.current!;
-    const planes = planesRef.current;
-
-    // grupo raíz
     const root = new THREE.Group();
-    root.name = "DemoRoot";
+    root.name = "ModelRoot";
     scene.add(root);
     currentRootRef.current = root;
 
-    // cuatro meshes separados para probar explode/selección
-    const items: { geom: THREE.BufferGeometry; pos: [number, number, number]; name: string; color: string }[] = [
-      { geom: new THREE.BoxGeometry(1, 1, 1), pos: [-1.5, 0, 0], name: "Box", color: "#9ad5ff" },
-      { geom: new THREE.SphereGeometry(0.7, 32, 32), pos: [1.5, 0, 0], name: "Sphere", color: "#ffd59a" },
-      { geom: new THREE.ConeGeometry(0.7, 1.2, 32), pos: [0, 0, 1.8], name: "Cone", color: "#c1ffa3" },
-      { geom: new THREE.CylinderGeometry(0.4, 0.4, 1.4, 32), pos: [0, 0, -1.8], name: "Cylinder", color: "#ffb3c1" },
-    ];
+    const ext = path.split(".").pop()?.toLowerCase();
 
-    items.forEach((it) => {
-      const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(it.color),
-        metalness: 0.2,
-        roughness: 0.7,
-        transparent: true,
-        opacity: 1,
-        clippingPlanes: planes,
-        clipShadows: true,
-      });
+    if (ext === "gltf" || ext === "glb") {
+      const loader = new GLTFLoader();
+      loader.load(path, (gltf) => {
+        root.add(gltf.scene);
 
-      const mesh = new THREE.Mesh(it.geom, mat);
-      mesh.position.set(...it.pos);
-      mesh.name = it.name;
-      root.add(mesh);
-      selectableMeshesRef.current.push(mesh);
-    });
+        // Escalado automático
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const size = box.getSize(new THREE.Vector3()).length();
+        const scaleFactor = 10 / size;
+        gltf.scene.scale.setScalar(scaleFactor);
 
-    // computar direcciones para explode
-    const modelBox = new THREE.Box3().setFromObject(root);
-    const modelCenter = modelBox.getCenter(new THREE.Vector3());
+        // Helpers de debug (opcional)
+        // scene.add(new THREE.BoxHelper(gltf.scene, 0xffff00));
+        // scene.add(new THREE.AxesHelper(5));
 
-    root.traverse((obj) => {
-      if ((obj as THREE.Mesh).isMesh) {
-        const mesh = obj as THREE.Mesh;
-        const meshBox = new THREE.Box3().setFromObject(mesh);
-        const meshCenter = meshBox.getCenter(new THREE.Vector3());
-        const dir = new THREE.Vector3().subVectors(meshCenter, modelCenter).normalize();
-        meshOriginalPositionsRef.current.push({
-          mesh,
-          original: mesh.position.clone(),
-          direction: dir,
+        gltf.scene.traverse((obj) => {
+          if ((obj as THREE.Mesh).isMesh) {
+            const mesh = obj as THREE.Mesh;
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: 0xcccccc,
+              metalness: 0.2,
+              roughness: 0.8,
+            });
+            selectableMeshesRef.current.push(mesh);
+            meshSettingsRef.current.set(mesh, { color: "#cccccc", opacity: 1 });
+            meshOriginalPositionsRef.current.push({
+              mesh,
+              original: mesh.position.clone(),
+              direction: mesh.position.clone().normalize(),
+            });
+          }
         });
-        if (mesh.geometry && !mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
-      }
-    });
 
-    // setear planos (offsets por bounding box)
-    setupStencilCaps(root);
-    // encuadrar cámara y GUI
-    frameCamera(root);
-    setupGUI();
+        frameCamera(gltf.scene);
+        setupGUI();
+      });
+    } else if (ext === "stl") {
+      const loader = new STLLoader();
+      loader.load(path, (geometry) => {
+        const mat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+        const mesh = new THREE.Mesh(geometry, mat);
+        root.add(mesh);
+        selectableMeshesRef.current.push(mesh);
+
+        frameCamera(mesh);
+        setupGUI();
+      });
+    }
   }
 
-  // ---------- helpers ----------
+  useEffect(() => {
+    if (!modelPath) return;
+    if (currentRootRef.current) {
+      sceneRef.current?.remove(currentRootRef.current);
+    }
+    selectableMeshesRef.current = [];
+    meshOriginalPositionsRef.current = [];
+    loadModel(modelPath);
+  }, [modelPath]);
+
+  // ---------- frameCamera ----------
   function frameCamera(root: THREE.Object3D) {
     const { camera, controls } = getThree();
     const box = new THREE.Box3().setFromObject(root);
+
     const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3()).length() || 1;
-    camera.position.copy(center).add(new THREE.Vector3(1, 1, 1).multiplyScalar(size));
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    const fov = camera.fov * (Math.PI / 180);
+    const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+    camera.position.set(center.x + cameraZ, center.y + cameraZ, center.z + cameraZ);
+    camera.lookAt(center);
     controls.target.copy(center);
     controls.update();
   }
 
-  function setupStencilCaps(root: THREE.Object3D) {
-    const planes = planesRef.current;
-    const clipState = clipStateRef.current;
-    const box = new THREE.Box3().setFromObject(root);
-    const def = [
-      { n: new THREE.Vector3(1, 0, 0), c: -box.min.x },
-      { n: new THREE.Vector3(-1, 0, 0), c: box.max.x },
-      { n: new THREE.Vector3(0, 1, 0), c: -box.min.y },
-      { n: new THREE.Vector3(0, -1, 0), c: box.max.y },
-      { n: new THREE.Vector3(0, 0, 1), c: -box.min.z },
-      { n: new THREE.Vector3(0, 0, -1), c: box.max.z },
-    ];
-    def.forEach((d, i) => {
-      planes[i].normal.copy(d.n);
-      planes[i].constant = d.c;
-      clipState[`offset${i}`] = d.c;
-    });
-  }
-
-  function updateClippingState() {
-    const planes = planesRef.current;
-    const selected = guiParamsRef.current.selectedMesh;
-    const onlySelected = guiParamsRef.current.clipSelectedOnly;
-    selectableMeshesRef.current.forEach((mesh, i) => {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.clippingPlanes = onlySelected && i !== selected ? [] : planes;
-      mat.needsUpdate = true;
-    });
-  }
-
-  function saveMeshSettings(mesh: THREE.Mesh) {
-    const mat = mesh.material as THREE.MeshStandardMaterial;
-    meshSettingsRef.current.set(mesh, {
-      color: `#${mat.color.getHexString()}`,
-      opacity: mat.opacity,
-    });
-  }
-
-  function updateExplode() {
-    const planes = planesRef.current;
-    const factor = explodeFactorRef.current;
-    meshOriginalPositionsRef.current.forEach(({ mesh, original, direction }) => {
-      mesh.position.copy(original).add(direction.clone().multiplyScalar(factor));
-    });
-    selectableMeshesRef.current.forEach((mesh) => {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.clippingPlanes = factor === 0 ? planes : [];
-      mat.needsUpdate = true;
-    });
-  }
-
+  // ---------- GUI ----------
   function setupGUI() {
     guiRef.current?.destroy();
     const gui = new GUI();
@@ -333,37 +247,18 @@ const ThreeViewer: React.FC = () => {
 
     const meshOptions: Record<string, number> = {};
     selectableMeshesRef.current.forEach((m, i) => (meshOptions[m.name || `Mesh_${i}`] = i));
-    guiParamsRef.current.selectedMesh = 0;
 
-    meshSelectorControllerRef.current = gui
-      .add(guiParamsRef.current, "selectedMesh", meshOptions)
-      .name("Target Mesh")
-      .onChange((i: number) => {
-        const mesh = selectableMeshesRef.current[i];
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        guiParamsRef.current.color = `#${mat.color.getHexString()}`;
-        guiParamsRef.current.opacity = mat.opacity;
-        colorControllerRef.current?.setValue(guiParamsRef.current.color);
-        transparencyControllerRef.current?.setValue(guiParamsRef.current.opacity);
-        updateClippingState();
-      });
+    gui.add(guiParamsRef.current, "selectedMesh", meshOptions).name("Target Mesh");
 
     gui
-      .add(guiParamsRef.current, "clipSelectedOnly")
-      .name("Clip Only Target")
-      .onChange(() => updateClippingState());
-
-    colorControllerRef.current = gui
       .addColor(guiParamsRef.current, "color")
       .name("Color")
       .onChange((c: string) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        mat.color.set(c);
-        saveMeshSettings(mesh);
+        (mesh.material as THREE.MeshStandardMaterial).color.set(c);
       });
 
-    transparencyControllerRef.current = gui
+    gui
       .add(guiParamsRef.current, "opacity", 0, 1, 0.01)
       .name("Opacity")
       .onChange((v: number) => {
@@ -371,24 +266,19 @@ const ThreeViewer: React.FC = () => {
         const mat = mesh.material as THREE.MeshStandardMaterial;
         mat.opacity = v;
         mat.transparent = v < 1;
-        mat.depthWrite = v === 1;
         mat.needsUpdate = true;
-        saveMeshSettings(mesh);
       });
 
     gui
-      .add({ explode: 0 }, "explode", 0, 200, 0.01)
+      .add(guiParamsRef.current, "explode", 0, 200, 0.1)
       .name("Explode")
-      .onChange((v: number) => {
-        explodeFactorRef.current = v;
-        updateExplode();
-      });
+      .onChange((v: number) => updateExplode(v));
 
     const axisNames = ["-X", "+X", "-Y", "+Y", "-Z", "+Z"];
     planes.forEach((pl, i) => {
       const folder = gui.addFolder(axisNames[i]);
       folder
-        .add(clipState, `offset${i}`, -1, 1, 0.001)
+        .add(clipState, `offset${i}`, -50, 50, 0.1)
         .name("Offset")
         .onChange((v: number) => (pl.constant = v));
       folder
@@ -402,7 +292,19 @@ const ThreeViewer: React.FC = () => {
     });
   }
 
-  // ---------- UI botones flotantes ----------
+  function updateExplode(factor: number) {
+    const planes = planesRef.current;
+    meshOriginalPositionsRef.current.forEach(({ mesh, original, direction }) => {
+      mesh.position.copy(original).add(direction.clone().multiplyScalar(factor));
+    });
+    selectableMeshesRef.current.forEach((mesh) => {
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      mat.clippingPlanes = factor === 0 ? planes : [];
+      mat.needsUpdate = true;
+    });
+  }
+
+  // ---------- UI ----------
   const handleHome = () => {
     const root = currentRootRef.current;
     if (root) frameCamera(root);
@@ -420,7 +322,7 @@ const ThreeViewer: React.FC = () => {
   return (
     <div className="w-full h-full relative">
       <div ref={mountRef} className="absolute inset-0" />
-      <div className="absolute top-3 right-3 flex gap-2">
+      <div className="absolute top-3 right-3 flex gap-2 z-10">
         <button
           onClick={handleHome}
           className="px-3 py-2 rounded bg-blue-600 text-white text-sm shadow hover:bg-blue-700"
