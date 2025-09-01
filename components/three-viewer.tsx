@@ -61,7 +61,7 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
       0.05,
       5000
     );
-    camera.position.set(5, 5, 5);
+    camera.position.set(0, 0, 10);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({
@@ -75,9 +75,9 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.enablePan = true;   // ✅ mover
-    controls.enableRotate = true; // ✅ rotar
-    controls.enableZoom = true;   // ✅ zoom
+    controls.enablePan = true;
+    controls.enableRotate = true;
+    controls.enableZoom = true;
     controlsRef.current = controls;
 
     const gizmo = new ViewportGizmo(camera, renderer, { placement: "bottom-right", type: "sphere" });
@@ -85,8 +85,8 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     gizmoRef.current = gizmo;
 
     // Luces
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const dir = new THREE.DirectionalLight(0xffffff, 1);
     dir.position.set(5, 10, 7);
     scene.add(dir);
 
@@ -166,23 +166,43 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
         // Escalado automático
         const box = new THREE.Box3().setFromObject(gltf.scene);
         const size = box.getSize(new THREE.Vector3()).length();
-        const scaleFactor = 10 / size;
+        const scaleFactor = 5 / size;
         gltf.scene.scale.setScalar(scaleFactor);
 
-        // Helpers de debug (opcional)
-        // scene.add(new THREE.BoxHelper(gltf.scene, 0xffff00));
-        // scene.add(new THREE.AxesHelper(5));
-
+        // ✅ Respetar materiales originales, fallback gris
         gltf.scene.traverse((obj) => {
           if ((obj as THREE.Mesh).isMesh) {
             const mesh = obj as THREE.Mesh;
-            mesh.material = new THREE.MeshStandardMaterial({
-              color: 0xcccccc,
-              metalness: 0.2,
-              roughness: 0.8,
-            });
+
+            if (mesh.material) {
+              if (Array.isArray(mesh.material)) {
+                mesh.material.forEach((m: any) => {
+                  if (m.vertexColors) m.vertexColors = true;
+                  m.transparent = true;
+                });
+              } else {
+                const mat = mesh.material as THREE.MeshStandardMaterial;
+                if (mat) {
+                  if (mat.vertexColors) mat.vertexColors = true;
+                  mat.transparent = true;
+                }
+              }
+            } else {
+              mesh.material = new THREE.MeshStandardMaterial({
+                color: 0xcccccc,
+                metalness: 0.2,
+                roughness: 0.8,
+              });
+            }
+
             selectableMeshesRef.current.push(mesh);
-            meshSettingsRef.current.set(mesh, { color: "#cccccc", opacity: 1 });
+
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            meshSettingsRef.current.set(mesh, {
+              color: `#${mat?.color?.getHexString?.() || "cccccc"}`,
+              opacity: mat?.opacity ?? 1,
+            });
+
             meshOriginalPositionsRef.current.push({
               mesh,
               original: mesh.position.clone(),
@@ -255,7 +275,8 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
       .name("Color")
       .onChange((c: string) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
-        (mesh.material as THREE.MeshStandardMaterial).color.set(c);
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        if (mat?.color) mat.color.set(c);
       });
 
     gui
@@ -264,9 +285,11 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
       .onChange((v: number) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
         const mat = mesh.material as THREE.MeshStandardMaterial;
-        mat.opacity = v;
-        mat.transparent = v < 1;
-        mat.needsUpdate = true;
+        if (mat) {
+          mat.opacity = v;
+          mat.transparent = v < 1;
+          mat.needsUpdate = true;
+        }
       });
 
     gui
@@ -299,8 +322,10 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     });
     selectableMeshesRef.current.forEach((mesh) => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.clippingPlanes = factor === 0 ? planes : [];
-      mat.needsUpdate = true;
+      if (mat) {
+        mat.clippingPlanes = factor === 0 ? planes : [];
+        mat.needsUpdate = true;
+      }
     });
   }
 
