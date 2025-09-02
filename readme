@@ -1,0 +1,11 @@
+1- Clonar el repo
+
+git clone <url-del-repo>
+cd <carpeta>
+
+2- npm install  (baja Three.js, Next.js, lil-gui, drei, etc.)
+
+
+Si algo tira error -  instalarlo manualmente:
+
+3- npm install three three-viewport-gizmo lil-gui

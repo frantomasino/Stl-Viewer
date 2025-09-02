@@ -40,39 +40,20 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
         const data: Project[] = await res.json()
         if (!mounted) return
         setProjects(data)
-        if (!selectedModel && data.length > 0) setSelectedModel(data[0].name)
+        if (!selectedModel && data.length > 0) {
+          setSelectedModel(data[0].name)
+        }
       } catch (e) {
-        console.error("Error cargando projects.json:", e)
+        console.error("❌ Error cargando projects.json:", e)
       }
     })()
     return () => {
       mounted = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // --- Placeholder handlers (ya manejados en ThreeViewer) ---
-  const resetView = () => {
-    console.warn("Reset View ahora se maneja dentro de ThreeViewer")
-  }
-
-  const takeCapture = () => {
-    console.warn("Captura ahora se maneja dentro de ThreeViewer")
-  }
-
-  const startRecording = () => {
-    console.warn("Grabación ahora se maneja dentro de ThreeViewer")
-    setIsRecording(true)
-  }
-
-  const stopRecording = () => {
-    console.warn("Grabación ahora se maneja dentro de ThreeViewer")
-    setIsRecording(false)
-  }
+  }, [selectedModel])
 
   return (
     <SidebarProvider>
-      {/* Sidebar con perfil a la IZQUIERDA */}
       <AppSidebar
         projects={projects}
         selectedModel={selectedModel}
@@ -81,37 +62,19 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
         handleLogout={handleLogout}
       />
 
-      {/* Main */}
       <SidebarInset className="min-h-0">
-        {/* Top bar */}
         <div className="border-b p-3 sm:p-4 flex items-center justify-between bg-white">
           <div className="flex items-center gap-2 sm:gap-3">
             <SidebarTrigger />
-            <Button variant="outline" size="sm" onClick={resetView}>
+            <Button variant="outline" size="sm">
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (!isRecording) startRecording()
-                else stopRecording()
-              }}
-            >
-              {isRecording ? (
-                <>
-                  <Square className="w-4 h-4 mr-2" /> Detener
-                </>
-              ) : (
-                <>
-                  <Circle className="w-4 h-4 mr-2" /> Grabar
-                </>
-              )}
+            <Button variant="outline" size="sm">
+              <Circle className="w-4 h-4 mr-2" /> Grabar
             </Button>
-            <Button variant="outline" size="sm" onClick={takeCapture}>
-              <Camera className="w-4 h-4 mr-2" />
-              Captura
+            <Button variant="outline" size="sm">
+              <Camera className="w-4 h-4 mr-2" /> Captura
             </Button>
             {selectedModel && (
               <Badge variant="outline" className="ml-2">
@@ -124,7 +87,14 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
         {/* Viewer */}
         <div className="flex-1 relative min-h-0">
           <div className="absolute inset-0">
-            <ThreeViewer modelPath={selectedPath ? encodeURI(selectedPath) : undefined} />
+            {selectedPath ? (
+              <>
+                {console.log("➡️ Enviando al visor:", selectedPath)}
+                <ThreeViewer modelPath={encodeURI(selectedPath)} />
+              </>
+            ) : (
+              <p className="text-white">⚠️ No hay modelo seleccionado</p>
+            )}
           </div>
         </div>
       </SidebarInset>

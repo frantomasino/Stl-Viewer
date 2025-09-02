@@ -1,4 +1,5 @@
 "use client"
+import Image from "next/image";
 
 import * as React from "react"
 import { Card } from "@/components/ui/card"
@@ -9,8 +10,7 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
-import { UserProfile } from "@/components/ui/user-profile" // <-- IMPORTA AQUÍ
-
+import { UserProfile } from "@/components/ui/user-profile"  
 export interface Project {
   name: string
   path: string
@@ -36,15 +36,17 @@ export function AppSidebar({
   return (
     <SidebarRoot>
   <SidebarContent>
-    {/* Logo   */}
-    <div className="p-6 border-b border-gray-200">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
-          <div className="w-4 h-4 bg-white rounded-full"></div>
-        </div>
-        <h1 className="text-xl font-bold text-gray-800">LAM3DA</h1>
-      </div>
-    </div>
+     {/* Logo */}
+<div className="p-6 border-b border-gray-200">
+  <div className="flex items-center gap-3">
+    <img
+      src="lambda.jpeg"  
+      alt="LAM3DA"
+      style={{ width: "auto", height: "100px" }}
+    />
+   </div>
+</div>
+
 
     {/* Proyectos  */}
     <SidebarGroup>
