@@ -62,42 +62,36 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
         handleLogout={handleLogout}
       />
 
-      <SidebarInset className="min-h-0">
-        <div className="border-b p-3 sm:p-4 flex items-center justify-between bg-white">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <SidebarTrigger />
-            <Button variant="outline" size="sm">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset
-            </Button>
-            <Button variant="outline" size="sm">
-              <Circle className="w-4 h-4 mr-2" /> Grabar
-            </Button>
-            <Button variant="outline" size="sm">
-              <Camera className="w-4 h-4 mr-2" /> Captura
-            </Button>
-            {selectedModel && (
-              <Badge variant="outline" className="ml-2">
-                Seleccionado: {selectedModel}
-              </Badge>
-            )}
-          </div>
-        </div>
+     <SidebarInset className="min-h-0">
+  <div className="border-b p-3 sm:p-4 flex items-center justify-between bg-white">
+    <div className="flex items-center gap-2 sm:gap-3">
+      <SidebarTrigger />
+      <Button variant="outline" size="sm">
+        <Circle className="w-4 h-4 mr-2" /> Grabar
+      </Button>
+      {selectedModel && (
+        <Badge variant="outline" className="ml-2">
+          Seleccionado: {selectedModel}
+        </Badge>
+      )}
+    </div>
+  </div>
 
-        {/* Viewer */}
-        <div className="flex-1 relative min-h-0">
-          <div className="absolute inset-0">
-            {selectedPath ? (
-              <>
-                {console.log("➡️ Enviando al visor:", selectedPath)}
-                <ThreeViewer modelPath={encodeURI(selectedPath)} />
-              </>
-            ) : (
-              <p className="text-white">⚠️ No hay modelo seleccionado</p>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
+  {/* Viewer */}
+  <div className="flex-1 relative min-h-0">
+    <div className="absolute inset-0">
+      {selectedPath ? (
+        <>
+          {console.log("➡️ Enviando al visor:", selectedPath)}
+          <ThreeViewer modelPath={encodeURI(selectedPath)} />
+        </>
+      ) : (
+        <p className="text-white">⚠️ No hay modelo seleccionado</p>
+      )}
+    </div>
+  </div>
+</SidebarInset>
+
     </SidebarProvider>
   )
 }

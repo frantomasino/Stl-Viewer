@@ -7,14 +7,14 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js"
 import { ViewportGizmo } from "three-viewport-gizmo"
 
-type ThreeViewerProps = {
-  modelPath?: string
-}
+type ThreeViewerProps = { modelPath?: string }
 
 type MeshSettings = { color: string; opacity: number }
 type ExplodeItem = { mesh: THREE.Mesh; original: THREE.Vector3; direction: THREE.Vector3 }
 
 const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
+  // montaje/render
+  const outerRef = useRef<HTMLDivElement>(null)
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
@@ -22,29 +22,46 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
   const controlsRef = useRef<OrbitControls | null>(null)
   const currentRootRef = useRef<THREE.Object3D | null>(null)
 
-  // 👉 refs para el panel y funciones extra (NO afectan tu flujo)
+  // extras / panel
   const gizmoRef = useRef<any>(null)
   const guiRef = useRef<GUI | null>(null)
   const selectableMeshesRef = useRef<THREE.Mesh[]>([])
   const meshSettingsRef = useRef<Map<THREE.Mesh, MeshSettings>>(new Map())
   const meshOriginalPositionsRef = useRef<ExplodeItem[]>([])
 
+  // clipping
   const planesRef = useRef<THREE.Plane[]>([])
   const clipStateRef = useRef<Record<string, any>>({})
+
+  // ======= NUEVO: estado/control del panel tipo main.jsx =======
+  const planeOffsetCtrlsRef = useRef<any[]>([])
+  const clipRangesRef = useRef<{ min: number; max: number }[]>([])
+
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster())
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2())
+  const selectedMeshIndexRef = useRef<number>(-1)
+
+  const explodeFactorRef = useRef<number>(0)
+  const isExploding = () => explodeFactorRef.current > 0.0001
+
+  const meshSelectorControllerRef = useRef<any>(null)
+  const colorControllerRef = useRef<any>(null)
+  const transparencyControllerRef = useRef<any>(null)
+  const explodeControllerRef = useRef<any>(null)
+
   const guiParamsRef = useRef({
     selectedMesh: 0,
-    color: "#cccccc",
+    color: "#FFC107",
     opacity: 1,
-    explode: 0,
-    clippingEnabled: false,   // ← desactivado por defecto para no cortar el modelo
     clipSelectedOnly: false,
   })
+  // =============================================================
 
   useEffect(() => {
     if (!mountRef.current) return
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x1a1a2e)
+    scene.background = new THREE.Color(0x1a1a2e) // fondo render
     sceneRef.current = scene
 
     const camera = new THREE.PerspectiveCamera(
@@ -56,9 +73,10 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     camera.position.set(0, 0, 5)
     cameraRef.current = camera
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    // Screenshot (relacionado y necesario)
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
-    renderer.localClippingEnabled = true // necesario para clipping (no afecta si está off)
+    renderer.localClippingEnabled = true
     mountRef.current.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
@@ -66,18 +84,18 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     controls.enableDamping = true
     controlsRef.current = controls
 
-    // luces (igual que tenías)
+    // luces
     const light = new THREE.DirectionalLight(0xffffff, 1)
     light.position.set(10, 10, 10)
     scene.add(light)
     scene.add(new THREE.AmbientLight(0xffffff, 0.6))
 
-    // ✅ joystick
+    // joystick
     const gizmo = new ViewportGizmo(camera, renderer, { placement: "bottom-right", type: "sphere" })
     gizmo.attachControls(controls)
     gizmoRef.current = gizmo
 
-    // planos de corte (quedan listos para cuando actives clipping en la GUI)
+    // planos de corte (lista como en tu archivo original)
     const planes: THREE.Plane[] = []
     const clipState: Record<string, any> = {}
     ;[
@@ -96,8 +114,9 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     planesRef.current = planes
     clipStateRef.current = clipState
 
+    let raf = 0
     const animate = () => {
-      requestAnimationFrame(animate)
+      raf = requestAnimationFrame(animate)
       controls.update()
       renderer.render(scene, camera)
       gizmoRef.current?.render?.()
@@ -112,23 +131,68 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
       camera.updateProjectionMatrix()
       renderer.setSize(clientWidth, clientHeight)
       gizmoRef.current?.update?.()
+      gizmo.render?.()
     }
     const ro = new ResizeObserver(onResize)
     ro.observe(mountRef.current)
 
+    // ======= NUEVO: click picking para Target Mesh + sync GUI =======
+    const onCanvasClick = (event: MouseEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect()
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+      mouseRef.current.set(x, y)
+
+      raycasterRef.current.setFromCamera(mouseRef.current, camera)
+      const intersects = raycasterRef.current.intersectObjects(
+        selectableMeshesRef.current.filter((m) => {
+          const mat = m.material as THREE.MeshStandardMaterial
+          const visible = m.visible !== false
+          const op = (mat?.opacity ?? 1) > 0.001
+          return visible && op
+        })
+      )
+      if (intersects.length > 0) {
+        const mesh = intersects[0].object as THREE.Mesh
+        const idx = selectableMeshesRef.current.indexOf(mesh)
+        selectedMeshIndexRef.current = idx
+        guiParamsRef.current.selectedMesh = idx
+
+        const mat = mesh.material as THREE.MeshStandardMaterial
+        guiParamsRef.current.color = "#" + (mat?.color?.getHexString?.() || "cccccc")
+        guiParamsRef.current.opacity = mat?.opacity ?? 1
+
+        meshSelectorControllerRef.current?.setValue(idx)
+        colorControllerRef.current?.setValue(guiParamsRef.current.color)
+        transparencyControllerRef.current?.setValue(guiParamsRef.current.opacity)
+
+        if (!isExploding()) updateClippingState()
+      }
+    }
+    renderer.domElement.addEventListener("click", onCanvasClick)
+    // ================================================================
+
     return () => {
       ro.disconnect()
+      renderer.domElement.removeEventListener("click", onCanvasClick)
+      cancelAnimationFrame(raf)
       guiRef.current?.destroy()
       gizmoRef.current?.dispose?.()
+      controls.dispose()
+      renderer.dispose()
       if (renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement)
       }
+      scene.clear()
+      selectableMeshesRef.current.length = 0
+      meshSettingsRef.current.clear()
+      meshOriginalPositionsRef.current.length = 0
+      currentRootRef.current = null
     }
   }, [])
 
   useEffect(() => {
     if (!modelPath) return
-    console.log("🔄 Intentando cargar modelo:", modelPath)
 
     const scene = sceneRef.current
     const camera = cameraRef.current
@@ -142,34 +206,33 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     selectableMeshesRef.current.length = 0
     meshSettingsRef.current.clear()
     meshOriginalPositionsRef.current.length = 0
+    explodeFactorRef.current = 0
 
     const loader = new GLTFLoader()
     loader.load(
       modelPath,
       (gltf) => {
-        console.log("✅ Modelo cargado con éxito:", modelPath)
         const root = gltf.scene
 
-        // 🔹 Escalar modelo automáticamente
+        // Escala auto (igual que tenías)
         const box = new THREE.Box3().setFromObject(root)
         const size = box.getSize(new THREE.Vector3()).length()
         const scaleFactor = 5 / size
         root.scale.setScalar(scaleFactor)
 
-        // 🔹 Recentrar en el origen
+        // Recentrar
         box.setFromObject(root)
         const center = box.getCenter(new THREE.Vector3())
         root.position.sub(center)
 
-        // 🔹 Agregar a la escena
+        // Agregar a escena
         currentRootRef.current = root
         scene.add(root)
 
-        // 🔹 Registrar meshes para el panel (respetando colores)
+        // Registrar meshes respetando materiales
         root.traverse((obj) => {
           if ((obj as THREE.Mesh).isMesh) {
             const mesh = obj as THREE.Mesh
-            // permitir transparencia para el slider de Opacity (sin tocar el color)
             const mat = mesh.material as THREE.MeshStandardMaterial
             if (mat) mat.transparent = true
 
@@ -179,10 +242,10 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
               opacity: mat?.opacity ?? 1,
             })
 
-            // vector de explosión desde el centro
+            // dirección explode radial desde origen (mantengo tu lógica)
             const wp = new THREE.Vector3()
             mesh.getWorldPosition(wp)
-            const dir = wp.clone().sub(new THREE.Vector3()).normalize() // ya está centrado
+            const dir = wp.clone().sub(new THREE.Vector3()).normalize()
             meshOriginalPositionsRef.current.push({
               mesh,
               original: mesh.position.clone(),
@@ -191,7 +254,7 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
           }
         })
 
-        // 🔹 Ajustar cámara
+        // Cámara
         box.setFromObject(root)
         const newCenter = box.getCenter(new THREE.Vector3())
         const newSize = box.getSize(new THREE.Vector3())
@@ -203,7 +266,12 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
         controls.target.copy(newCenter)
         controls.update()
 
-        // 🔹 Panel
+        // ======= NUEVO: alinear planos + ranges dinámicos =======
+        alignPlanesToCurrentModel()
+        updateClipOffsetControllersRangeFromRoot(root)
+        // ========================================================
+
+        // Panel
         setupGUI()
       },
       undefined,
@@ -213,7 +281,107 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     )
   }, [modelPath])
 
-  // ===== Panel (solo agrega controles, no cambia tu flujo) =====
+  // ===================== UTILIDADES (panel main.jsx) =====================
+  function computeClipRangesFromBox(box: THREE.Box3) {
+    return [
+      { min: -box.max.x, max: -box.min.x }, // -X
+      { min: box.min.x, max: box.max.x },   // +X
+      { min: -box.max.y, max: -box.min.y }, // -Y
+      { min: box.min.y, max: box.max.y },   // +Y
+      { min: -box.max.z, max: -box.min.z }, // -Z
+      { min: box.min.z, max: box.max.z },   // +Z
+    ]
+  }
+
+  function updateClipOffsetControllersRangeFromRoot(root: THREE.Object3D) {
+    const box = new THREE.Box3().setFromObject(root)
+    clipRangesRef.current = computeClipRangesFromBox(box)
+    planeOffsetCtrlsRef.current.forEach((ctrl, i) => {
+      const r = clipRangesRef.current[i]
+      if (!ctrl || !r) return
+      ctrl.min(r.min).max(r.max)
+      const span = Math.max(1e-6, Math.abs(r.max - r.min))
+      ctrl.step(span / 1000)
+      ctrl.updateDisplay()
+    })
+  }
+
+  function setSceneClippingEnabled(enabled: boolean) {
+    const scene = sceneRef.current
+    if (!scene) return
+    const planes = planesRef.current
+    scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh
+      if (!mesh.isMesh) return
+      const mat = mesh.material as THREE.MeshStandardMaterial
+      mat.clippingPlanes = enabled ? planes : []
+      mat.needsUpdate = true
+    })
+  }
+
+  function alignPlanesToCurrentModel() {
+    const planes = planesRef.current
+    const root = currentRootRef.current
+    if (!root || planes.length < 6) return
+
+    const box = new THREE.Box3().setFromObject(root)
+    const { min, max } = box
+
+    planes[0].constant = -min.x
+    planes[1].constant =  max.x
+    planes[2].constant = -min.y
+    planes[3].constant =  max.y
+    planes[4].constant = -min.z
+    planes[5].constant =  max.z
+
+    const clipState = clipStateRef.current
+    clipState.offset0 = planes[0].constant
+    clipState.offset1 = planes[1].constant
+    clipState.offset2 = planes[2].constant
+    clipState.offset3 = planes[3].constant
+    clipState.offset4 = planes[4].constant
+    clipState.offset5 = planes[5].constant
+  }
+
+  function ensureCameraCoversBox(box: THREE.Box3, fitOffset = 1.2) {
+    const camera = cameraRef.current!
+    const controls = controlsRef.current!
+    const size = box.getSize(new THREE.Vector3())
+    const center = box.getCenter(new THREE.Vector3())
+
+    const maxSize = Math.max(size.x, size.y, size.z)
+    const fitHeightDistance = maxSize / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5))
+    const fitWidthDistance = fitHeightDistance / camera.aspect
+    const distance = fitOffset * Math.max(fitHeightDistance, fitWidthDistance)
+
+    camera.near = Math.max(0.01, distance / 100)
+    camera.far = Math.max(camera.far, distance * 100)
+    camera.updateProjectionMatrix()
+    controls.update()
+    controls.maxDistance = Math.max(controls.maxDistance || 0, distance * 10)
+  }
+
+  function frameCamera(root: THREE.Object3D) {
+    const camera = cameraRef.current!
+    const controls = controlsRef.current!
+    const box = new THREE.Box3().setFromObject(root)
+
+    const center = box.getCenter(new THREE.Vector3())
+    const size = box.getSize(new THREE.Vector3())
+    const maxDim = Math.max(size.x, size.y, size.z)
+
+    const fov = camera.fov * (Math.PI / 180)
+    const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2))
+
+    camera.position.set(center.x + cameraZ, center.y + cameraZ, center.z + cameraZ)
+    camera.lookAt(center)
+    controls.target.copy(center)
+    controls.update()
+    ensureCameraCoversBox(box, 1.2)
+  }
+  // ============================================================================
+
+  // ===== Panel ( por el del main.jsx) =====
   function setupGUI() {
     guiRef.current?.destroy()
     const gui = new GUI()
@@ -222,23 +390,36 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
     const planes = planesRef.current
     const clipState = clipStateRef.current
 
-    // Selección de mesh
     const meshOptions: Record<string, number> = {}
     selectableMeshesRef.current.forEach((m, i) => (meshOptions[m.name || `Mesh_${i}`] = i))
-    gui.add(guiParamsRef.current, "selectedMesh", meshOptions).name("Target Mesh")
 
-    // Color
+    meshSelectorControllerRef.current = gui
+      .add(guiParamsRef.current, "selectedMesh", meshOptions)
+      .name("Target Mesh")
+      .onChange(() => updateClippingState())
+
     gui
+      .add(guiParamsRef.current, "clipSelectedOnly")
+      .name("Clip Only Target")
+      .onChange(() => {
+        if (isExploding()) return
+        updateClippingState()
+      })
+
+    colorControllerRef.current = gui
       .addColor(guiParamsRef.current, "color")
       .name("Color")
       .onChange((c: string) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh]
         const mat = mesh.material as THREE.MeshStandardMaterial
         if (mat?.color) mat.color.set(c)
+        meshSettingsRef.current.set(mesh, {
+          color: c,
+          opacity: (mesh.material as THREE.MeshStandardMaterial)?.opacity ?? 1,
+        })
       })
 
-    // Opacidad
-    gui
+    transparencyControllerRef.current = gui
       .add(guiParamsRef.current, "opacity", 0, 1, 0.01)
       .name("Opacity")
       .onChange((v: number) => {
@@ -248,35 +429,28 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
           mat.opacity = v
           mat.transparent = v < 1
           mat.needsUpdate = true
+          meshSettingsRef.current.set(mesh, { color: `#${mat.color.getHexString()}`, opacity: v })
         }
       })
 
-    // Explode
-    gui
-      .add(guiParamsRef.current, "explode", 0, 200, 0.1)
+    explodeControllerRef.current = gui
+      .add({ explode: 0 }, "explode", 0, 200, 0.1)
       .name("Explode")
       .onChange((v: number) => updateExplode(v))
 
-    // Clipping ON/OFF + sólo target (para no cortar por defecto)
-    gui
-      .add(guiParamsRef.current, "clippingEnabled")
-      .name("Enable Clipping")
-      .onChange(updateClippingState)
-    gui
-      .add(guiParamsRef.current, "clipSelectedOnly")
-      .name("Clip Only Target")
-      .onChange(updateClippingState)
+    // reset refs de sliders por si se reconstruye la GUI
+    planeOffsetCtrlsRef.current = []
 
-    // Sliders por plano
     const axisNames = ["-X", "+X", "-Y", "+Y", "-Z", "+Z"]
     planes.forEach((pl, i) => {
       const folder = gui.addFolder(axisNames[i])
-      folder
-        .add(clipState, `offset${i}`, -50, 50, 0.1)
+      const offsetCtrl = folder
+        // valores temporales, luego se ajustan según bbox del modelo
+        .add(clipState, `offset${i}`, -1, 1, 0.001)
         .name("Offset")
         .onChange((v: number) => {
           pl.constant = v
-          updateClippingState()
+          if (!isExploding()) updateClippingState()
         })
       folder
         .add(clipState, `flip${i}`)
@@ -284,37 +458,104 @@ const ThreeViewer: React.FC<ThreeViewerProps> = ({ modelPath }) => {
         .onChange(() => {
           pl.negate()
           clipState[`offset${i}`] = pl.constant
-          updateClippingState()
+          offsetCtrl.updateDisplay()
+          if (!isExploding()) updateClippingState()
         })
+      planeOffsetCtrlsRef.current[i] = offsetCtrl
       folder.open()
     })
+
+    // rangos correctos según el modelo cargado
+    if (currentRootRef.current) {
+      updateClipOffsetControllersRangeFromRoot(currentRootRef.current)
+    }
+
+    // habilitar clipping de escena por defecto (lo apago/enciendo con explode)
+    setSceneClippingEnabled(true)
   }
 
+  // ===== Explode (con lógica de clipping ON/OFF y realineo) =====
   function updateExplode(factor: number) {
+    explodeFactorRef.current = factor
+
     meshOriginalPositionsRef.current.forEach(({ mesh, original, direction }) => {
       mesh.position.copy(original).add(direction.clone().multiplyScalar(factor))
     })
+
+    const scene = sceneRef.current
+    if (!scene) return
+
+    if (isExploding()) {
+      // apagar clipping para todos mientras explota
+      scene.traverse((obj) => {
+        const m = obj as THREE.Mesh
+        if (!m.isMesh) return
+        const mat = m.material as THREE.MeshStandardMaterial
+        if (mat.clippingPlanes && mat.clippingPlanes.length) {
+          mat.clippingPlanes = []
+          mat.needsUpdate = true
+        }
+      })
+    } else {
+      // al volver a 0: re-alinear y restaurar clipping
+      alignPlanesToCurrentModel()
+      setSceneClippingEnabled(true)
+      updateClippingState()
+    }
   }
 
+  // ===== Clipping por target (como en main.jsx) =====
   function updateClippingState() {
-    const enabled = guiParamsRef.current.clippingEnabled
-    const onlyTarget = guiParamsRef.current.clipSelectedOnly
+    if (isExploding()) return
     const planes = planesRef.current
-
     selectableMeshesRef.current.forEach((mesh, i) => {
       const mat = mesh.material as THREE.MeshStandardMaterial
-      if (!mat) return
-      if (!enabled) {
-        mat.clippingPlanes = []
-      } else {
-        const apply = !onlyTarget || i === guiParamsRef.current.selectedMesh
-        mat.clippingPlanes = apply ? planes : []
-      }
+      mat.clippingPlanes =
+        guiParamsRef.current.clipSelectedOnly && i !== guiParamsRef.current.selectedMesh
+          ? []
+          : planes
       mat.needsUpdate = true
     })
   }
 
-  return <div ref={mountRef} className="w-full h-full" />
+  // ===== Botones Home / Screenshot =====
+  const handleHome = () => {
+    const root = currentRootRef.current
+    if (root) frameCamera(root)
+  }
+
+  const handleScreenshot = () => {
+    const renderer = rendererRef.current
+    if (!renderer) return
+    const dataURL = renderer.domElement.toDataURL("image/png")
+    const link = document.createElement("a")
+    link.href = dataURL
+    link.download = "screenshot.png"
+    link.click()
+  }
+
+  // ===== Render =====
+  return (
+    <div ref={outerRef} className="w-full h-full relative">
+      <div ref={mountRef} className="absolute inset-0" />
+      <div className="absolute top-3 right-3 z-10 flex gap-2">
+        <button
+          onClick={handleHome}
+          className="px-3 py-2 rounded bg-blue-600 text-white text-sm shadow hover:bg-blue-700"
+          title="Home (frame model)"
+        >
+          🏠 Home
+        </button>
+        <button
+          onClick={handleScreenshot}
+          className="px-3 py-2 rounded bg-gray-700 text-white text-sm shadow hover:bg-gray-800"
+          title="Screenshot"
+        >
+          📷 Screenshot
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default ThreeViewer

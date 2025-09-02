@@ -30,3 +30,7 @@ next-env.d.ts
 
 .env
 serviceAccountKey.json
+
+echo "public/*.gltf" >> .gitignore
+echo "public/*.glb"  >> .gitignore
+echo "public/*.bin"  >> .gitignore

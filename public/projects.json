@@ -1,5 +1,11 @@
 [
   {
+    "name": "modelo 1",
+    "path": "https://dl.dropboxusercontent.com/scl/fi/o9nmkzg82n8jd6lbl73xj/corazon.gltf?rlkey=8fkshiie39x6l0ruipgwr0svf&st=h3tplgnm&dl=0",
+    "type": "Craneal",
+    "date": "27/8/2025"
+  },
+  {
     "name": "modelo 2",
     "path": "/modelo-2.gltf",
     "type": "Craneal",
@@ -9,12 +15,12 @@
     "name": "modelo 3",
     "path": "/modelo-3.gltf",
     "type": "Craneal",
-    "date": "27/8/2025"
+    "date": "19/8/2025"
   },
   {
-    "name": "modelo",
-    "path": "/modelo-2.gltf",
+    "name": "modelo 4",
+    "path": "/modelo-1.gltf",
     "type": "Craneal",
-    "date": "19/8/2025"
+    "date": "1/9/2025"
   }
 ]
