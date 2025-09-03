@@ -1,8 +1,8 @@
+ // components/ui/user-profile.tsx
 "use client"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,6 +34,14 @@ type UserProfileProps = {
   handleLogout?: () => void
 }
 
+const initialsFrom = (name: string) =>
+  (name || "U")
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 2) || "U"
+
 export function UserProfile({ user, handleLogout }: UserProfileProps) {
   const [isEditingProfile, setIsEditingProfile] = useState(false)
 
@@ -43,7 +51,6 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
     specialty: "Especialidad",
     institution: "Institución",
     bio: "Perfil médico.",
-    avatar: "/placeholder.svg",
   })
 
   useEffect(() => {
@@ -52,7 +59,6 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
         ...prev,
         name: user.displayName || prev.name,
         email: user.email || prev.email,
-        avatar: user.photoURL || prev.avatar,
       }))
     }
   }, [user])
@@ -62,21 +68,21 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
     setIsEditingProfile(false)
   }
 
+  const initials = initialsFrom(profile.name)
+
   return (
     <div className="flex items-center gap-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={profile.avatar} alt={profile.name} />
-              <AvatarFallback>
-                {profile.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .substring(0, 2)}
-              </AvatarFallback>
-            </Avatar>
+          {/* Botón redondo NEGRO/GRIS con iniciales */}
+          <Button
+            variant="ghost"
+            className="relative h-10 w-10 p-0 rounded-full"
+            aria-label="Usuario"
+          >
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white text-sm font-semibold shadow-md hover:bg-neutral-800">
+              {initials}
+            </span>
           </Button>
         </DropdownMenuTrigger>
 
@@ -84,16 +90,9 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
           {/* Cabecera */}
           <DropdownMenuLabel className="font-normal">
             <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={profile.avatar} alt={profile.name} />
-                <AvatarFallback>
-                  {profile.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .substring(0, 2)}
-                </AvatarFallback>
-              </Avatar>
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white text-lg font-semibold shadow">
+                {initials}
+              </span>
               <div className="flex flex-col">
                 <p className="text-sm font-medium">{profile.name}</p>
                 <p className="text-xs text-muted-foreground">{profile.email}</p>
@@ -127,17 +126,11 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
               </DialogHeader>
 
               <div className="grid gap-4 py-4">
+                {/* Vista del “avatar” como círculo oscuro con iniciales */}
                 <div className="flex items-center justify-center">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={profile.avatar} alt={profile.name} />
-                    <AvatarFallback>
-                      {profile.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .substring(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900 text-white text-2xl font-semibold shadow">
+                    {initials}
+                  </span>
                 </div>
 
                 <div className="grid gap-2">

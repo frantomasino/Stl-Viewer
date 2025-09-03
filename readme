@@ -9,3 +9,9 @@ cd <carpeta>
 Si algo tira error -  instalarlo manualmente:
 
 3- npm install three three-viewport-gizmo lil-gui
+
+
+
+Para crear usuarios es en la terminal. 
+
+ node crearUsuarios.js y ejecutas.

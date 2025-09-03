@@ -54,7 +54,9 @@ const usersData = [
   { uid: "6", nickname: "toma",   email: "toma@gmail.com",   password: "toma123",   projects: ["p1"] },
   { uid: "7", nickname: "fran",   email: "fran@gmail.com",   password: "fran123",   projects: ["p1"] },
   { uid: "8", nickname: "pepe",   email: "pepe@gmail.com",   password: "pepe123",   projects: ["p2"] },
-  { uid: "9", nickname: "ftoma",  email: "ftoma@gmail.com",  password: "toma123",   projects: ["p2"] }
+  { uid: "9", nickname: "ftoma",  email: "ftoma@gmail.com",  password: "toma123",   projects: ["p2"] },
+  { uid: "88", nickname: "solo",  email: "solo@gmail.com",  password: "solo123",   projects: ["p2"] },
+  
 ];
 
 const projectsData = [
@@ -80,7 +82,7 @@ async function crearUsuariosYProyectos() {
         try {
           userExists = await auth.getUser(u.uid);
           console.log(`⚠️ Usuario Auth ya existe: ${u.email}`);
-        } catch {} // no existe
+        } catch {}  
 
         if (!userExists) {
           await auth.createUser({ uid: u.uid, email: u.email, password: u.password });

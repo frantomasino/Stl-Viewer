@@ -84,6 +84,20 @@ html, body, :root { height: 100%; }
   }
 }
 
+.lil-gui.root { right: 14px !important; top: 120px !important; }
+
+.section {
+  font-size: 16px;
+  color: #33809d;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+
+
+
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
