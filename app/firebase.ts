@@ -1,14 +1,14 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, FirebaseError } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
-  updatePassword
+  updatePassword,
+  User,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -20,6 +20,26 @@ import {
   getDoc
 } from "firebase/firestore";
 import bcrypt from "bcryptjs";
+
+// Tipos auxiliares
+type LoginResult = true | string;
+
+export type FirestoreLoginUser = {
+  uid: string;
+  email: string;
+  nickname: string;
+  displayName: string;
+  photoURL: string | null;
+};
+
+function getErrorMessage(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const anyErr = error as { message?: string };
+    if (anyErr.message) return anyErr.message;
+  }
+  return "Ocurrió un error inesperado";
+}
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -40,41 +60,45 @@ export const provider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 
 // -------------------- Login Google --------------------
-export const loginWithGoogle = async () => {
+export const loginWithGoogle = async (): Promise<LoginResult> => {
   try {
     await signInWithPopup(auth, provider);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error al iniciar sesión con Google:", error);
-    return error.message;
+    return getErrorMessage(error);
   }
 };
 
 // -------------------- Login con Email/Contraseña  --------------------
-export const loginWithEmail = async (email, password) => {
+export const loginWithEmail = async (email: string, password: string): Promise<LoginResult> => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
     return true;
-  } catch (error) {
-    if (error.code === "auth/user-not-found") return "Usuario no encontrado";
-    if (error.code === "auth/wrong-password") return "Contraseña incorrecta";
-    return error.message;
+  } catch (error: unknown) {
+    const code = (error as FirebaseError)?.code;
+    if (code === "auth/user-not-found") return "Usuario no encontrado";
+    if (code === "auth/wrong-password") return "Contraseña incorrecta";
+    return getErrorMessage(error);
   }
 };
 
 // -------------------- Logout --------------------
-export const logout = async () => {
+export const logout = async (): Promise<LoginResult> => {
   try {
     await signOut(auth);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error al cerrar sesión:", error);
-    return error.message;
+    return getErrorMessage(error);
   }
 };
 
 // -------------------- Login con Firestore (email o nickname) --------------------
-export const loginWithFirestoreUser = async (identifier, password) => {
+export const loginWithFirestoreUser = async (
+  identifier: string,
+  password: string
+): Promise<string | FirestoreLoginUser> => {
   try {
     const usersRef = collection(db, "users");
 
@@ -92,52 +116,60 @@ export const loginWithFirestoreUser = async (identifier, password) => {
 
     if (!userSnap) return "Usuario no encontrado";
 
-    const userData = userSnap.data();
+    const userData = userSnap.data() as any;
 
     // Comparar contraseña con bcrypt
     const isValid = await bcrypt.compare(password, userData.passwordHash || "");
     if (!isValid) return "Contraseña incorrecta";
 
-    return {
+    const result: FirestoreLoginUser = {
       uid: userSnap.id,
       email: userData.email,
       nickname: userData.nickname,
       displayName: userData.nickname,
       photoURL: userData.photoURL || null
     };
-  } catch (error) {
+    return result;
+  } catch (error: unknown) {
     console.error("Error al iniciar sesión con Firestore:", error);
     return "Error al iniciar sesión con Firestore";
   }
 };
 
 // -------------------- Obtener info extra de Firestore --------------------
-export const getFirestoreUser = async (uid) => {
+export const getFirestoreUser = async (
+  uid: string
+): Promise<Record<string, unknown> | null> => {
   try {
     const userDoc = await getDoc(doc(db, "users", uid));
     if (!userDoc.exists()) return null;
-    return userDoc.data();
-  } catch (error) {
+    return userDoc.data() as Record<string, unknown>;
+  } catch (error: unknown) {
     console.error("Error al obtener usuario de Firestore:", error);
     return null;
   }
 };
 
 // -------------------- Cambiar contraseña --------------------
-export const changePassword = async (currentPassword, newPassword, user) => {
-  if (!user) return "Usuario no autenticado";
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+  user: User | null
+): Promise<string> => {
+  if (!user || !user.email) return "Usuario no autenticado";
   try {
     // Reautenticación
     const credential = EmailAuthProvider.credential(user.email, currentPassword);
-    await reauthenticateWithCredential(auth.currentUser, credential);
+    await reauthenticateWithCredential(auth.currentUser!, credential);
 
     // Actualizar contraseña
-    await updatePassword(auth.currentUser, newPassword);
+    await updatePassword(auth.currentUser!, newPassword);
     return "Contraseña actualizada correctamente";
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(error);
-    if (error.code === "auth/wrong-password") return "Contraseña actual incorrecta";
-    if (error.code === "auth/weak-password") return "La nueva contraseña es demasiado débil";
+    const code = (error as FirebaseError)?.code;
+    if (code === "auth/wrong-password") return "Contraseña actual incorrecta";
+    if (code === "auth/weak-password") return "La nueva contraseña es demasiado débil";
     return "Error al actualizar la contraseña";
   }
 };
