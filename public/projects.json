@@ -17,10 +17,12 @@
     "type": "Craneal",
     "date": "19/8/2025"
   },
-  {
-    "name": "modelo 4",
-    "path": "/modelo-3.gltf",
+   {
+    "name": "ramos",
+    "path": "/Ramos+Sangoy.gltf",
     "type": "Craneal",
     "date": "1/9/2025"
   }
+  
+ 
 ]

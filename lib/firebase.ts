@@ -47,13 +47,14 @@ function getErrorMessage(error: unknown): string {
 
 // Configuración de Firebase
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_APP_ID,
-};
+  apiKey: "AIzaSyAQ0FZnhkUS21KeLF2_SD6DvQec4wT2OUU",
+  authDomain: "stl-viewer-cac54.firebaseapp.com",
+  projectId: "stl-viewer-cac54",
+  storageBucket: "stl-viewer-cac54.appspot.com",
+  messagingSenderId: "998564690654",
+  appId: "1:998564690654:web:e65371fa213ecec699a04f"
+}; 
+
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
