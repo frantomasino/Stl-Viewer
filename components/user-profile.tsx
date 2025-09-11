@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { GoToAdminLink } from "./UserLinks"
+
 import {
   Dialog,
   DialogContent,
@@ -23,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Edit, LogOut } from "lucide-react"
+import { Edit, LogOut,ShieldAlert } from "lucide-react"
 
 type UserProfileProps = {
   user?: {
@@ -202,6 +204,14 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
               </div>
             </DialogContent>
           </Dialog>
+
+
+          {/* admin panel */}
+          <DropdownMenuItem>
+
+          <GoToAdminLink />
+          </DropdownMenuItem>
+
 
           {/* Cerrar sesión */}
           <DropdownMenuItem

@@ -1,29 +1,27 @@
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import './globals.css'
+// app/layout.tsx
+import type { ReactNode } from "react";
+import type { Metadata } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Analytics } from "@vercel/analytics/react"; // ✅ import correcto
+import { ThemeProvider } from "@/components/theme-provider";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: '3D visualizer',
-  description: '3D visualizer',
-  generator: 'v0.dev',
-}
+  title: "3D visualizer",
+  description: "3D visualizer",
+  generator: "v0.dev",
+};
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <head>
-        <style>{`
-html {
-  font-family: ${GeistSans.style.fontFamily};
-  --font-sans: ${GeistSans.variable};
-  --font-mono: ${GeistMono.variable};
-}
-        `}</style>
-      </head>
-      <body className="h-full">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`min-h-dvh font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
+        <Analytics />
+      </body>
     </html>
-  )
+  );
 }

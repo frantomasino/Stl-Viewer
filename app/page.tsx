@@ -9,9 +9,9 @@ import {
   loginWithFirestoreUser,
   logout,
   changePassword,
-} from "./firebase";
-import STLViewer from "./STLViewer";
-
+} from "../lib/firebase";
+import STLViewer from "../components/STLViewer";
+import { onIdTokenChanged, getAuth } from "firebase/auth";
 // Shadcn UI
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // 👇 importamos tu UserProfile
-import { UserProfile } from "@/components/ui/user-profile";
+import { UserProfile } from "@/components/user-profile";
 
 // --- LOGIN SOLO CLIENTE PARA EVITAR HYDRATION ERROR ---
 const ClientOnlyLogin = dynamic(() => Promise.resolve(LoginComponent), { ssr: false });
@@ -151,6 +151,20 @@ function LoginComponent({
     </div>
   );
 }
+let wired = false;
+export function initAuthSessionSync() {
+  if (wired) return;
+  wired = true;
+  const auth = getAuth();
+  onIdTokenChanged(auth, async (u) => {
+    const token = u ? await u.getIdToken() : "";
+    await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+  });
+}
 
 export default function Page() {
   const [user, setUser] = useState(null);
@@ -169,7 +183,10 @@ export default function Page() {
     const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
     return () => unsubscribe();
   }, []);
-
+  // 👇 agregar este effect aparte
+  useEffect(() => {
+    initAuthSessionSync();  // 🔥 se ejecuta una vez y queda escuchando onIdTokenChanged
+  }, []);
   const handleEmailLogin = async () => {
     setError("");
     setIsLoading(true);
@@ -282,3 +299,4 @@ export default function Page() {
     </div>
   );
 }
+
