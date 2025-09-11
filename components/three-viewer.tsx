@@ -255,6 +255,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       const intersects = raycasterRef.current.intersectObjects(
         selectableMeshesRef.current.filter((m) => {
           const mat = m.material as THREE.MeshStandardMaterial;
+          mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
           const visible = m.visible !== false;
           const op = (mat?.opacity ?? 1) > 0.001;
           return visible && op;
@@ -268,6 +269,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
         guiParamsRef.current.selectedMesh = idx;
 
         const mat = mesh.material as THREE.MeshStandardMaterial;
+        mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
         guiParamsRef.current.color = "#" + (mat?.color?.getHexString?.() || "cccccc");
         guiParamsRef.current.opacity = mat?.opacity ?? 1;
 
@@ -335,6 +337,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
             roughness: 0.7,
             transparent: true,
             opacity: 1,
+            side : THREE.DoubleSide // OPT: evitar problemas caras internas
           });
 
           const mesh = new THREE.Mesh(geometry, mat);
@@ -409,6 +412,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
             if ((obj as THREE.Mesh).isMesh) {
               const mesh = obj as THREE.Mesh;
               const mat = mesh.material as THREE.MeshStandardMaterial;
+              mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
               const meshBox = new THREE.Box3().setFromObject(mesh);
               const meshCenter = meshBox.getCenter(new THREE.Vector3());
               if (mat) mat.transparent = true;
@@ -500,6 +504,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       const mat = mesh.material as THREE.MeshStandardMaterial;
       mat.clippingPlanes = enabled ? planes : [];
       mat.needsUpdate = true;
+      mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
     });
   }
 
@@ -610,6 +615,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       .onChange((c: string) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
         const mat = mesh.material as THREE.MeshStandardMaterial;
+        mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
         if (mat?.color) mat.color.set(c);
         meshSettingsRef.current.set(mesh, {
           color: c,
@@ -623,10 +629,12 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       .onChange((v: number) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
         const mat = mesh.material as THREE.MeshStandardMaterial;
+
         if (mat) {
           mat.opacity = v;
           mat.transparent = v < 1;
           mat.needsUpdate = true;
+          mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
           meshSettingsRef.current.set(mesh, {
             color: `#${mat.color.getHexString()}`,
             opacity: v,
@@ -649,6 +657,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
             if (mat.clippingPlanes && mat.clippingPlanes.length) {
               mat.clippingPlanes = [];
               mat.needsUpdate = true;
+              mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
             }
           });
         } else {
@@ -659,6 +668,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
             const mat = m.material as THREE.MeshStandardMaterial;
             mat.clippingPlanes = planes;
             mat.needsUpdate = true;
+            mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
           });
           updateClippingState();
         }
@@ -729,6 +739,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       mat.clippingPlanes =
         guiParamsRef.current.clipSelectedOnly && i !== guiParamsRef.current.selectedMesh ? [] : planes;
       mat.needsUpdate = true;
+      mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
     });
   }
 
