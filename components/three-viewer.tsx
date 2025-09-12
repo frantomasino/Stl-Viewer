@@ -9,6 +9,9 @@ import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { ViewportGizmo } from "three-viewport-gizmo";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
+// 👉 importa tu panel nuevo (no lo toco)
+import ControlsPanel, { ControlsState } from "@/components/ControlsPanel";
+
 type ThreeViewerProps = { modelPath?: string };
 
 export type ThreeViewerHandle = {
@@ -35,10 +38,6 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(({ modelPath
   const controlsRef = useRef<OrbitControls | null>(null);
   const currentRootRef = useRef<THREE.Object3D | null>(null);
 
-  // ancla donde montaremos el panel
-const guiMountRef = useRef<HTMLDivElement>(null);
-
-
   // extras / panel
   const gizmoRef = useRef<any>(null);
   const guiRef = useRef<GUI | null>(null);
@@ -51,7 +50,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
   const planesRef = useRef<THREE.Plane[]>([]);
   const clipStateRef = useRef<Record<string, any>>({});
 
-  // ======= estado/control del panel tipo main.jsx =======
+  // ======= estado/control del panel lil-gui =======
   const planeOffsetCtrlsRef = useRef<any[]>([]);
   const clipRangesRef = useRef<{ min: number; max: number }[]>([]);
 
@@ -63,7 +62,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
   const explodeFactorRef = useRef<number>(0);
   const isExploding = () => explodeFactorRef.current > 0.0001;
 
-  /** controladores de lil-gui que sincronizamos al seleccionar por click */
+  /** controladores de lil-gui */
   const meshSelectorControllerRef = useRef<any>(null);
   const colorControllerRef = useRef<any>(null);
   const transparencyControllerRef = useRef<any>(null);
@@ -75,15 +74,14 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     opacity: 1,
     clipSelectedOnly: false,
   });
-  // =============================================================
 
-  // ====== Grabación (para botón "Grabar" externo) ======
+  // ====== Grabación ======
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recordChunksRef = useRef<Blob[]>([]);
   const recordMimeRef = useRef<string>("video/webm");
 
   function startRecording(opts?: { fps?: number; mimeType?: string; timesliceMs?: number }): boolean {
-    if (recorderRef.current) return false; 
+    if (recorderRef.current) return false;
     const canvas = rendererRef.current?.domElement as HTMLCanvasElement | undefined;
     if (!canvas) return false;
 
@@ -125,30 +123,35 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       mr.stop();
     });
   }
-  // =====================================================
 
+  // ================= PANEL NUEVO: estado =================
+  const [controlsState, setControlsState] = React.useState<ControlsState>({
+    selectedMesh: 0,
+    meshNames: [],
+    clipSelectedOnly: false,
+    color: "#ffffff",
+    opacity: 1,
+    explode: 0,
+    windowX: [0, 0],
+    windowY: [0, 0],
+    windowZ: [0, 0],
+    limits: { x: { min: -1, max: 1 }, y: { min: -1, max: 1 }, z: { min: -1, max: 1 } },
+  });
+
+  // ================= Setup escena =================
   useEffect(() => {
     if (!mountRef.current) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf8f9fa); // fondo render
+    scene.background = new THREE.Color(0xf8f9fa);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      mountRef.current.clientWidth / mountRef.current.clientHeight,
-      0.05,
-      500
-    );
+    const camera = new THREE.PerspectiveCamera(60, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.05, 500);
     camera.position.set(5, 5, 5);
     cameraRef.current = camera;
     scene.add(camera);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      preserveDrawingBuffer: true,
-      stencil: true,
-    });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, stencil: true });
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     renderer.localClippingEnabled = true;
     renderer.sortObjects = true;
@@ -160,14 +163,12 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     controls.enablePan = true;
     controlsRef.current = controls;
 
-    // luces
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(10, 10, 10);
     scene.add(light);
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-    // joystick
-    const gizmo = new ViewportGizmo(camera, renderer, {
+   const gizmo = new ViewportGizmo(camera, renderer, {
       type: "sphere",
       size: 150,
       placement: "bottom-right",
@@ -203,17 +204,10 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     gizmo.attachControls(controls);
     gizmoRef.current = gizmo;
 
-    // planos de corte (lista como en tu archivo original)
+    // planos
     const planes: THREE.Plane[] = [];
     const clipState: Record<string, any> = {};
-    [
-      new THREE.Vector3(-1, 0, 0),
-      new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, -1, 0),
-      new THREE.Vector3(0, 1, 0),
-      new THREE.Vector3(0, 0, -1),
-      new THREE.Vector3(0, 0, 1),
-    ].forEach((n, i) => {
+    [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 1)].forEach((n, i) => {
       const pl = new THREE.Plane(n.clone(), 0);
       planes.push(pl);
       clipState[`offset${i}`] = 0;
@@ -231,7 +225,6 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     };
     animate();
 
-    // resize
     const onResize = () => {
       if (!mountRef.current) return;
       const { clientWidth, clientHeight } = mountRef.current;
@@ -239,12 +232,11 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       camera.updateProjectionMatrix();
       renderer.setSize(clientWidth, clientHeight);
       gizmoRef.current?.update?.();
-      gizmo.render?.();
+      (gizmo as any).render?.();
     };
     const ro = new ResizeObserver(onResize);
     ro.observe(mountRef.current);
 
-    // click picking para Target Mesh + sync GUI
     const onCanvasClick = (event: MouseEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -254,8 +246,8 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       raycasterRef.current.setFromCamera(mouseRef.current, camera);
       const intersects = raycasterRef.current.intersectObjects(
         selectableMeshesRef.current.filter((m) => {
-          const mat = m.material as THREE.MeshStandardMaterial;
-          mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
+          const mat = getMat(m);
+          if (mat) mat.side = THREE.DoubleSide;
           const visible = m.visible !== false;
           const op = (mat?.opacity ?? 1) > 0.001;
           return visible && op;
@@ -268,14 +260,21 @@ const guiMountRef = useRef<HTMLDivElement>(null);
         selectedMeshIndexRef.current = idx;
         guiParamsRef.current.selectedMesh = idx;
 
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
+        const mat = getMat(mesh);
         guiParamsRef.current.color = "#" + (mat?.color?.getHexString?.() || "cccccc");
         guiParamsRef.current.opacity = mat?.opacity ?? 1;
 
-        meshSelectorControllerRef.current?.setValue(idx);
-        colorControllerRef.current?.setValue(guiParamsRef.current.color);
-        transparencyControllerRef.current?.setValue(guiParamsRef.current.opacity);
+        meshSelectorControllerRef.current?.setValue?.(idx);
+        colorControllerRef.current?.setValue?.(guiParamsRef.current.color);
+        transparencyControllerRef.current?.setValue?.(guiParamsRef.current.opacity);
+
+        // refleja en el panel nuevo
+        setControlsState((p) => ({
+          ...p,
+          selectedMesh: idx,
+          color: guiParamsRef.current.color,
+          opacity: guiParamsRef.current.opacity,
+        }));
 
         if (!isExploding() && planesReadyRef.current) updateClippingState();
       }
@@ -290,13 +289,11 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       gizmoRef.current?.dispose?.();
       controls.dispose();
       renderer.dispose();
-      if (renderer.domElement.parentNode) {
-        renderer.domElement.parentNode.removeChild(renderer.domElement);
-      }
+      if (renderer.domElement.parentNode) (renderer.domElement.parentNode as HTMLElement).removeChild(renderer.domElement);
       scene.clear();
-      selectableMeshesRef.current.length = 0;
+      selectableMeshesRef.current = [];
       meshSettingsRef.current.clear();
-      meshOriginalPositionsRef.current.length = 0;
+      meshOriginalPositionsRef.current = [];
       currentRootRef.current = null;
     };
   }, []);
@@ -304,30 +301,118 @@ const guiMountRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!modelPath) return;
 
-    const scene = sceneRef.current;
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
+    const scene = sceneRef.current!;
+    const camera = cameraRef.current!;
+    const controls = controlsRef.current!;
     if (!scene || !camera || !controls) return;
 
     // limpiar root previo
-    if (currentRootRef.current) {
-      scene.remove(currentRootRef.current);
-    }
-    selectableMeshesRef.current.length = 0;
+    if (currentRootRef.current) scene.remove(currentRootRef.current);
+    selectableMeshesRef.current = [];
     meshSettingsRef.current.clear();
-    meshOriginalPositionsRef.current.length = 0;
+    meshOriginalPositionsRef.current = [];
     explodeFactorRef.current = 0;
 
     const ext = modelPath.split(".").pop()?.toLowerCase();
+
+    const onModelReady = (root: THREE.Object3D) => {
+      currentRootRef.current = root;
+      scene.add(root);
+
+      // Colleo meshes y materiales
+      const names: string[] = [];
+      root.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          forEachMat(mesh, (mat) => {
+            mat.side = THREE.DoubleSide;
+            mat.transparent = true;
+          });
+          const mat = getMat(mesh);
+
+          selectableMeshesRef.current.push(mesh);
+          names.push(mesh.name || `Mesh_${names.length}`);
+
+          meshSettingsRef.current.set(mesh, {
+            color: `#${mat?.color?.getHexString?.() || "cccccc"}`,
+            opacity: mat?.opacity ?? 1,
+          });
+        }
+      });
+
+      // Frame + centrar/escala
+      const boxBefore = new THREE.Box3().setFromObject(root);
+      centerAndFit(root, boxBefore);
+
+      // === 👇 FIX EXPLODE: construir originales y direcciones ===
+      const modelBox = new THREE.Box3().setFromObject(root);
+      const modelCenter = modelBox.getCenter(new THREE.Vector3()); // ≈ (0,0,0) tras centerAndFit
+      meshOriginalPositionsRef.current = []; // por las dudas
+      selectableMeshesRef.current.forEach((mesh) => {
+        // posición local original (después de centrar)
+        const original = mesh.position.clone();
+
+        // dirección desde el centro del modelo hacia el centro/worldPosition de la malla
+  const meshBoxW = new THREE.Box3().setFromObject(mesh);
+  const meshCenterW = meshBoxW.getCenter(new THREE.Vector3());
+  let dirWorld = meshCenterW.clone().sub(modelCenter);
+  if (dirWorld.lengthSq() < 1e-10) dirWorld.set(0, 0, 1);
+  dirWorld.normalize();
+
+  // 3) convertir esa dirección WORLD a LOCAL DEL PADRE del mesh (inline, sin helper)
+  const parent = mesh.parent!;
+  // tomamos dos puntos en world: base y base+dir, los llevamos al espacio local del padre
+  const p0 = parent.worldToLocal(meshCenterW.clone());
+  const p1 = parent.worldToLocal(meshCenterW.clone().add(dirWorld));
+  const dirLocal = p1.sub(p0);
+  if (dirLocal.lengthSq() < 1e-10) dirLocal.set(0, 0, 1);
+  else dirLocal.normalize();
+
+  // 4) guardamos original + dirección LOCAL
+  meshOriginalPositionsRef.current.push({
+    mesh,
+    original: original,
+    direction: dirLocal,
+  });
+      });
+      // === 👆 FIN FIX EXPLODE ===
+
+      // límites y ventanas para panel nuevo (coords del modelo)
+      const box = new THREE.Box3().setFromObject(root);
+      const lx = { min: box.min.x, max: box.max.x };
+      const ly = { min: box.min.y, max: box.max.y };
+      const lz = { min: box.min.z, max: box.max.z };
+
+      setControlsState((p) => ({
+        ...p,
+        meshNames: names.length ? names : ["Mesh_0"],
+        selectedMesh: 0,
+        color: `#${getMat(selectableMeshesRef.current[0])?.color.getHexString?.() || "cccccc"}`,
+        opacity: getMat(selectableMeshesRef.current[0])?.opacity ?? 1,
+        explode: 0, // reset
+        limits: { x: lx, y: ly, z: lz },
+        windowX: [lx.min, lx.max],
+        windowY: [ly.min, ly.max],
+        windowZ: [lz.min, lz.max],
+      }));
+
+      updateClipOffsetControllersRangeFromRoot(root);
+      alignPlanesToCurrentModel();
+      setSceneClippingEnabled(true);
+      // setupGUI();
+      explodeFactorRef.current = 0;
+explodeControllerRef.current?.setValue?.(0); // lil-gui
+setControlsState((p) => ({ ...p, explode: 0 }));
+      planesReadyRef.current = true;
+      updateClippingState();
+    };
 
     if (ext === "stl") {
       const loader = new STLLoader();
       loader.load(
         modelPath,
         (geometry) => {
-          if (!(geometry as any).hasAttribute?.("normal")) {
-            geometry.computeVertexNormals();
-          }
+          if (!(geometry as any).hasAttribute?.("normal")) geometry.computeVertexNormals();
           const root = new THREE.Group();
           root.name = "ModelRoot";
 
@@ -337,147 +422,73 @@ const guiMountRef = useRef<HTMLDivElement>(null);
             roughness: 0.7,
             transparent: true,
             opacity: 1,
-            side : THREE.DoubleSide // OPT: evitar problemas caras internas
+            side: THREE.DoubleSide,
           });
-
           const mesh = new THREE.Mesh(geometry, mat);
           root.add(mesh);
 
-          const scene = sceneRef.current!;
-          scene.add(root);
-
-          const box = new THREE.Box3().setFromObject(root);
-          const sizeLen = box.getSize(new THREE.Vector3()).length();
-          const scaleFactor = sizeLen > 0 ? 5 / sizeLen : 1;
-          root.scale.setScalar(scaleFactor);
-
-          box.setFromObject(root);
-          const center = box.getCenter(new THREE.Vector3());
-          root.position.sub(center);
-
-          currentRootRef.current = root;
-
-          selectableMeshesRef.current.length = 0;
-          selectableMeshesRef.current.push(mesh);
-
-          meshSettingsRef.current.set(mesh, {
-            color: `#${mat.color?.getHexString?.() || "cccccc"}`,
-            opacity: mat.opacity ?? 1,
-          });
-          actulizarGui(mesh);
-
-          const wp = new THREE.Vector3();
-          mesh.getWorldPosition(wp);
-          const dir = wp.clone().sub(new THREE.Vector3()).normalize();
-          meshOriginalPositionsRef.current.push({
-            mesh,
-            original: mesh.position.clone(),
-            direction: dir.lengthSq() > 1e-6 ? dir : new THREE.Vector3(0, 0, 1),
-          });
-
-          frameCamera(root);
-
-          updateClipOffsetControllersRangeFromRoot(root);
-          alignPlanesToCurrentModel();
-          setSceneClippingEnabled(true);
-
-          setupGUI();
+          onModelReady(root);
         },
         undefined,
-        (err) => {
-          console.error("❌ Error cargando STL:", modelPath, err);
-        }
+        (err) => console.error("❌ Error cargando STL:", modelPath, err)
       );
-    } else if (ext?.includes("gltf") || ext === "glb") {
+    } else {
       const loader = new GLTFLoader();
       loader.load(
         modelPath,
-        (gltf) => {
-          const root = gltf.scene;
-
-          const box = new THREE.Box3().setFromObject(root);
-          const modelCenter = box.getCenter(new THREE.Vector3());
-          const size = box.getSize(new THREE.Vector3()).length();
-          const scaleFactor = 5 / size;
-          root.scale.setScalar(scaleFactor);
-
-          box.setFromObject(root);
-          const center = box.getCenter(new THREE.Vector3());
-          root.position.sub(center);
-
-          currentRootRef.current = root;
-          scene.add(root);
-
-          root.traverse((obj) => {
-            if ((obj as THREE.Mesh).isMesh) {
-              const mesh = obj as THREE.Mesh;
-              const mat = mesh.material as THREE.MeshStandardMaterial;
-              mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
-              const meshBox = new THREE.Box3().setFromObject(mesh);
-              const meshCenter = meshBox.getCenter(new THREE.Vector3());
-              if (mat) mat.transparent = true;
-
-              selectableMeshesRef.current.push(mesh);
-              meshSettingsRef.current.set(mesh, {
-                color: `#${mat?.color?.getHexString?.() || "cccccc"}`,
-                opacity: mat?.opacity ?? 1,
-              });
-              actulizarGui(mesh);
-
-              const dir = new THREE.Vector3().subVectors(meshCenter, modelCenter).normalize();
-              const wp = new THREE.Vector3();
-              mesh.getWorldPosition(wp);
-              meshOriginalPositionsRef.current.push({
-                mesh,
-                original: mesh.position.clone(),
-                direction: dir,
-              });
-            }
-          });
-
-          box.setFromObject(root);
-          const newCenter = box.getCenter(new THREE.Vector3());
-          const newSize = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(newSize.x, newSize.y, newSize.z);
-          const fov = camera.fov * (Math.PI / 180);
-          const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-          camera.position.set(newCenter.x, newCenter.y, cameraZ * 2);
-          camera.lookAt(newCenter);
-          controls.target.copy(newCenter);
-          controls.update();
-
-          updateClipOffsetControllersRangeFromRoot(root);
-          alignPlanesToCurrentModel();
-          setSceneClippingEnabled(true);
-          setupGUI();
-        },
+        (gltf) => onModelReady(gltf.scene),
         undefined,
-        (error) => {
-          console.error("❌ Error cargando modelo:", modelPath, error);
-        }
+        (error) => console.error("❌ Error cargando modelo:", modelPath, error)
       );
     }
   }, [modelPath]);
 
-  // ===================== UTILIDADES (panel) =====================
+  // ===== Util =====
+  function getMat(mesh: THREE.Mesh): THREE.MeshStandardMaterial | null {
+    const m = mesh.material as any;
+    if (Array.isArray(m)) {
+      const first = m.find((x: any) => x?.isMeshStandardMaterial) as THREE.MeshStandardMaterial | undefined;
+      return first ?? null;
+    }
+    return m?.isMeshStandardMaterial ? (m as THREE.MeshStandardMaterial) : null;
+  }
+  function forEachMat(mesh: THREE.Mesh, fn: (mat: THREE.MeshStandardMaterial) => void) {
+    const m = mesh.material as any;
+    if (Array.isArray(m)) m.forEach((mm: any) => mm?.isMeshStandardMaterial && fn(mm));
+    else if (m?.isMeshStandardMaterial) fn(m);
+  }
 
-  function actulizarGui(mesh: THREE.Mesh) {
-    const existing = meshSettingsRef.current.get(mesh);
-    const colorHex = "#" + (mesh.material as THREE.MeshStandardMaterial).color.getHexString();
-    const opacityVal = (mesh.material as THREE.MeshStandardMaterial).opacity;
-    const settings = existing || { color: colorHex, opacity: opacityVal };
-    guiParamsRef.current.color = settings.color;
-    guiParamsRef.current.opacity = settings.opacity;
+  function centerAndFit(root: THREE.Object3D, box: THREE.Box3) {
+    const size = box.getSize(new THREE.Vector3()).length();
+    const scaleFactor = size > 0 ? 5 / size : 1;
+    root.scale.setScalar(scaleFactor);
+
+    box.setFromObject(root);
+    const center = box.getCenter(new THREE.Vector3());
+    root.position.sub(center);
+
+    const camera = cameraRef.current!;
+    const controls = controlsRef.current!;
+    box.setFromObject(root);
+    const c = box.getCenter(new THREE.Vector3());
+    const s = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(s.x, s.y, s.z);
+    const fov = camera.fov * (Math.PI / 180);
+    const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    camera.position.set(c.x, c.y, cameraZ * 2);
+    camera.lookAt(c);
+    controls.target.copy(c);
+    controls.update();
   }
 
   function computeClipRangesFromBox(box: THREE.Box3) {
     return [
       { min: -box.max.x, max: -box.min.x }, // -X
-      { min: box.min.x, max: box.max.x }, // +X
+      { min: box.min.x, max: box.max.x },   // +X
       { min: -box.max.y, max: -box.min.y }, // -Y
-      { min: box.min.y, max: box.max.y }, // +Y
+      { min: box.min.y, max: box.max.y },   // +Y
       { min: -box.max.z, max: -box.min.z }, // -Z
-      { min: box.min.z, max: box.max.z }, // +Z
+      { min: box.min.z, max: box.max.z },   // +Z
     ];
   }
 
@@ -501,10 +512,11 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.clippingPlanes = enabled ? planes : [];
-      mat.needsUpdate = true;
-      mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
+      forEachMat(mesh, (mat) => {
+        mat.clippingPlanes = enabled ? planes : [];
+        mat.needsUpdate = true;
+        mat.side = THREE.DoubleSide;
+      });
     });
   }
 
@@ -516,12 +528,12 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     const box = new THREE.Box3().setFromObject(root);
     const { min, max } = box;
 
-    planes[0].constant = -min.x;
-    planes[1].constant = max.x;
-    planes[2].constant = -min.y;
-    planes[3].constant = max.y;
-    planes[4].constant = -min.z;
-    planes[5].constant = max.z;
+    planes[0].constant = -min.x; // -X
+    planes[1].constant =  max.x; // +X
+    planes[2].constant = -min.y; // -Y
+    planes[3].constant =  max.y; // +Y
+    planes[4].constant = -min.z; // -Z
+    planes[5].constant =  max.z; // +Z
 
     const clipState = clipStateRef.current;
     clipState.offset0 = planes[0].constant;
@@ -532,45 +544,147 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     clipState.offset5 = planes[5].constant;
   }
 
-  function ensureCameraCoversBox(box: THREE.Box3, fitOffset = 1.2) {
-    const camera = cameraRef.current!;
-    const controls = controlsRef.current!;
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
+  function updateExplode() {
+    meshOriginalPositionsRef.current.forEach(({ mesh, original, direction }) => {
+      mesh.position.copy(original).add(direction.clone().multiplyScalar(explodeFactorRef.current));
+    });
 
-    const maxSize = Math.max(size.x, size.y, size.z);
-    const fitHeightDistance =
-      maxSize / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5));
-    const fitWidthDistance = fitHeightDistance / camera.aspect;
-    const distance = fitOffset * Math.max(fitHeightDistance, fitWidthDistance);
-
-    camera.near = Math.max(0.01, distance / 100);
-    camera.far = Math.max(camera.far, distance * 100);
-    camera.updateProjectionMatrix();
-    controls.update();
-    controls.maxDistance = Math.max(controls.maxDistance || 0, distance * 10);
+    const root = currentRootRef.current;
+    if (root) {
+      if (explodeFactorRef.current > 0) {
+        setSceneClippingEnabled(false);
+      } else {
+        alignPlanesToCurrentModel();
+        if (currentRootRef.current) updateClipOffsetControllersRangeFromRoot(currentRootRef.current);
+        setSceneClippingEnabled(true);
+        updateClippingState();
+      }
+    }
   }
 
-  function frameCamera(root: THREE.Object3D) {
-    const camera = cameraRef.current!;
-    const controls = controlsRef.current!;
-    const box = new THREE.Box3().setFromObject(root);
-
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-
-    const fov = camera.fov * (Math.PI / 180);
-    const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-
-    camera.position.set(center.x + cameraZ, center.y + cameraZ, center.z + cameraZ);
-    camera.lookAt(center);
-    controls.target.copy(center);
-    controls.update();
-    ensureCameraCoversBox(box, 1.2);
+  function updateClippingState() {
+    if (isExploding()) return;
+    const planes = planesRef.current;
+    selectableMeshesRef.current.forEach((mesh, i) => {
+      forEachMat(mesh, (mat) => {
+        mat.clippingPlanes =
+          guiParamsRef.current.clipSelectedOnly && i !== guiParamsRef.current.selectedMesh ? [] : planes;
+        mat.needsUpdate = true;
+        mat.side = THREE.DoubleSide;
+      });
+    });
   }
 
-  // ===== Panel =====
+  // =================== Panel NUEVO -> aplicar cambios ===================
+  function applyControls(u: Partial<ControlsState>) {
+    // selected mesh
+    if (u.selectedMesh !== undefined) {
+      const i = Math.max(0, Math.min(u.selectedMesh, selectableMeshesRef.current.length - 1));
+      guiParamsRef.current.selectedMesh = i;
+      meshSelectorControllerRef.current?.setValue?.(i);
+      const mesh = selectableMeshesRef.current[i];
+      if (mesh) {
+        const mat = getMat(mesh);
+        setControlsState((p) => ({
+          ...p,
+          selectedMesh: i,
+          color: `#${mat?.color?.getHexString?.() || p.color}`,
+          opacity: mat?.opacity ?? p.opacity,
+        }));
+      }
+      if (!isExploding()) updateClippingState();
+    }
+
+    // clip only
+    if (u.clipSelectedOnly !== undefined) {
+      guiParamsRef.current.clipSelectedOnly = u.clipSelectedOnly;
+      if (!isExploding()) updateClippingState();
+    }
+
+    // color
+    if (u.color !== undefined) {
+      const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
+      if (mesh) {
+        forEachMat(mesh, (mat) => {
+          try { mat.color.set(u.color!); } catch {}
+          mat.needsUpdate = true;
+          mat.side = THREE.DoubleSide;
+        });
+        meshSettingsRef.current.set(mesh, {
+          color: u.color,
+          opacity: getMat(mesh)?.opacity ?? 1,
+        });
+      }
+      guiParamsRef.current.color = u.color;
+      colorControllerRef.current?.setValue?.(u.color);
+    }
+
+    // opacity
+    if (u.opacity !== undefined) {
+      const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
+      if (mesh) {
+        forEachMat(mesh, (mat) => {
+          mat.opacity = u.opacity!;
+          mat.transparent = u.opacity! < 1;
+          mat.needsUpdate = true;
+          mat.side = THREE.DoubleSide;
+        });
+        meshSettingsRef.current.set(mesh, {
+          color: `#${getMat(mesh)?.color.getHexString() || "cccccc"}`,
+          opacity: u.opacity!,
+        });
+      }
+      guiParamsRef.current.opacity = u.opacity;
+      transparencyControllerRef.current?.setValue?.(u.opacity);
+    }
+
+    // explode
+    if (u.explode !== undefined) {
+      explodeFactorRef.current = u.explode;
+      explodeControllerRef.current?.setValue?.(u.explode);
+      updateExplode();
+    }
+
+    // ===== MAPEOS RANGE <-> PLANES (en coords del modelo) =====
+    const planes = planesRef.current;
+    const setOffsetGui = (idx: number, v: number) => {
+      const ctrl = planeOffsetCtrlsRef.current[idx];
+      if (ctrl?.setValue) ctrl.setValue(v);
+      else ctrl?.updateDisplay?.();
+    };
+
+    // X: window = [xmin, xmax]  ->  c(-X)=xmax, c(+X)=-xmin
+    if (u.windowX) {
+      const [xmin, xmax] = u.windowX;
+      planes[0].constant = xmax;   // -X
+      planes[1].constant = -xmin;  // +X
+      setOffsetGui(0, planes[0].constant);
+      setOffsetGui(1, planes[1].constant);
+    }
+    // Y: window = [ymin, ymax]  ->  c(-Y)=ymax, c(+Y)=-ymin
+    if (u.windowY) {
+      const [ymin, ymax] = u.windowY;
+      planes[2].constant = ymax;   // -Y
+      planes[3].constant = -ymin;  // +Y
+      setOffsetGui(2, planes[2].constant);
+      setOffsetGui(3, planes[3].constant);
+    }
+    // Z: window = [zmin, zmax]  ->  c(-Z)=zmax, c(+Z)=-zmin
+    if (u.windowZ) {
+      const [zmin, zmax] = u.windowZ;
+      planes[4].constant = zmax;   // -Z
+      planes[5].constant = -zmin;  // +Z
+      setOffsetGui(4, planes[4].constant);
+      setOffsetGui(5, planes[5].constant);
+    }
+
+    if ((u.windowX || u.windowY || u.windowZ) && !isExploding()) updateClippingState();
+
+    // merge al estado del panel
+    setControlsState((p) => ({ ...p, ...u }));
+  }
+
+  // ===================== Panel ORIGINAL (lil-gui) =====================
   function setupGUI() {
     guiRef.current?.destroy();
     const gui = new GUI();
@@ -591,13 +705,17 @@ const guiMountRef = useRef<HTMLDivElement>(null);
         if (i < 0) return;
         const mesh = selectableMeshesRef.current[i];
         const current = meshSettingsRef.current.get(mesh) || {
-          color: "#" + (mesh.material as THREE.MeshStandardMaterial).color.getHexString(),
-          opacity: (mesh.material as THREE.MeshStandardMaterial).opacity,
+          color: "#" + (getMat(mesh)?.color.getHexString() || "cccccc"),
+          opacity: getMat(mesh)?.opacity ?? 1,
         };
         guiParamsRef.current.color = current.color;
         guiParamsRef.current.opacity = current.opacity;
         colorControllerRef.current?.setValue(guiParamsRef.current.color);
         transparencyControllerRef.current?.setValue(guiParamsRef.current.opacity);
+
+        // reflejar en panel
+        setControlsState((p) => ({ ...p, selectedMesh: i, color: current.color, opacity: current.opacity }));
+
         if (!isExploding()) updateClippingState();
       });
 
@@ -605,6 +723,7 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       .add(guiParamsRef.current, "clipSelectedOnly")
       .name("Clip Only Target")
       .onChange(() => {
+        setControlsState((p) => ({ ...p, clipSelectedOnly: guiParamsRef.current.clipSelectedOnly }));
         if (isExploding()) return;
         updateClippingState();
       });
@@ -614,13 +733,15 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       .name("Color")
       .onChange((c: string) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-        mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
-        if (mat?.color) mat.color.set(c);
+        forEachMat(mesh, (mat) => {
+          mat.side = THREE.DoubleSide;
+          if (mat?.color) mat.color.set(c);
+        });
         meshSettingsRef.current.set(mesh, {
           color: c,
-          opacity: (mesh.material as THREE.MeshStandardMaterial)?.opacity ?? 1,
+          opacity: getMat(mesh)?.opacity ?? 1,
         });
+        setControlsState((p) => ({ ...p, color: c }));
       });
 
     transparencyControllerRef.current = gui
@@ -628,18 +749,17 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       .name("Opacity")
       .onChange((v: number) => {
         const mesh = selectableMeshesRef.current[guiParamsRef.current.selectedMesh];
-        const mat = mesh.material as THREE.MeshStandardMaterial;
-
-        if (mat) {
+        forEachMat(mesh, (mat) => {
           mat.opacity = v;
           mat.transparent = v < 1;
           mat.needsUpdate = true;
-          mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
-          meshSettingsRef.current.set(mesh, {
-            color: `#${mat.color.getHexString()}`,
-            opacity: v,
-          });
-        }
+          mat.side = THREE.DoubleSide;
+        });
+        meshSettingsRef.current.set(mesh, {
+          color: `#${getMat(mesh)?.color.getHexString() || "cccccc"}`,
+          opacity: v,
+        });
+        setControlsState((p) => ({ ...p, opacity: v }));
       });
 
     explodeControllerRef.current = gui
@@ -647,34 +767,36 @@ const guiMountRef = useRef<HTMLDivElement>(null);
       .name("Explode")
       .onChange((v: number) => {
         explodeFactorRef.current = v;
+        setControlsState((p) => ({ ...p, explode: v }));
         updateExplode();
 
         if (isExploding()) {
           sceneRef.current?.traverse((obj) => {
             const m = obj as THREE.Mesh;
             if (!m.isMesh) return;
-            const mat = m.material as THREE.MeshStandardMaterial;
-            if (mat.clippingPlanes && mat.clippingPlanes.length) {
-              mat.clippingPlanes = [];
-              mat.needsUpdate = true;
-              mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
-            }
+            forEachMat(m, (mat) => {
+              if (mat.clippingPlanes?.length) {
+                mat.clippingPlanes = [];
+                mat.needsUpdate = true;
+                mat.side = THREE.DoubleSide;
+              }
+            });
           });
         } else {
           alignPlanesToCurrentModel();
           sceneRef.current?.traverse((obj) => {
             const m = obj as THREE.Mesh;
             if (!m.isMesh) return;
-            const mat = m.material as THREE.MeshStandardMaterial;
-            mat.clippingPlanes = planes;
-            mat.needsUpdate = true;
-            mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
+            forEachMat(m, (mat) => {
+              mat.clippingPlanes = planes;
+              mat.needsUpdate = true;
+              mat.side = THREE.DoubleSide;
+            });
           });
           updateClippingState();
         }
       });
 
-    // reset refs de sliders por si se reconstruye la GUI
     planeOffsetCtrlsRef.current = [];
 
     const axisNames = ["-X", "+X", "-Y", "+Y", "-Z", "+Z"];
@@ -685,68 +807,33 @@ const guiMountRef = useRef<HTMLDivElement>(null);
         .name("Offset")
         .onChange((v: number) => {
           pl.constant = v;
+
+          // reflejar a ventanas del panel NUEVO (map inverso)
+          setControlsState((p) => {
+            const px = planesRef.current;
+            const winX: [number, number] = [-px[1].constant, px[0].constant];
+            const winY: [number, number] = [-px[3].constant, px[2].constant];
+            const winZ: [number, number] = [-px[5].constant, px[4].constant];
+            return { ...p, windowX: winX, windowY: winY, windowZ: winZ };
+          });
+
           if (!isExploding()) updateClippingState();
         });
-      folder
-        .add(clipState, `flip${i}`)
-        .name("Flip")
-        .onChange(() => {
-          pl.negate();
-          clipState[`offset${i}`] = pl.constant;
-          offsetCtrl.updateDisplay();
-          if (!isExploding()) updateClippingState();
-        });
+      folder.add(clipState, `flip${i}`).name("Flip");
       planeOffsetCtrlsRef.current[i] = offsetCtrl;
       folder.open();
     });
 
-    if (currentRootRef.current) {
-      updateClipOffsetControllersRangeFromRoot(currentRootRef.current);
-    }
-
+    if (currentRootRef.current) updateClipOffsetControllersRangeFromRoot(currentRootRef.current);
     setSceneClippingEnabled(true);
-  }
-
-  // ===== Explode (con lógica de clipping ON/OFF y realineo) =====
-  function updateExplode() {
-    meshOriginalPositionsRef.current.forEach(({ mesh, original, direction }) => {
-      mesh.position.copy(original).add(direction.clone().multiplyScalar(explodeFactorRef.current));
-    });
-
-    const root = currentRootRef.current;
-    if (root) {
-      const explodedBox = new THREE.Box3().setFromObject(root);
-      if (explodeFactorRef.current > 0) {
-        setSceneClippingEnabled(false);
-        // opcional: ensureCameraCoversBox(explodedBox);
-      } else {
-        alignPlanesToCurrentModel();
-        if (currentRootRef.current) {
-          updateClipOffsetControllersRangeFromRoot(currentRootRef.current);
-        }
-        setSceneClippingEnabled(true);
-        updateClippingState();
-      }
-    }
-  }
-
-  // ===== Clipping por target =====
-  function updateClippingState() {
-    if (isExploding()) return;
-    const planes = planesRef.current;
-    selectableMeshesRef.current.forEach((mesh, i) => {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      mat.clippingPlanes =
-        guiParamsRef.current.clipSelectedOnly && i !== guiParamsRef.current.selectedMesh ? [] : planes;
-      mat.needsUpdate = true;
-      mat.side = THREE.DoubleSide; // OPT: evitar problemas caras internas
-    });
   }
 
   // ===== Botones Home / Screenshot =====
   const handleHome = () => {
     const root = currentRootRef.current;
-    if (root) frameCamera(root);
+    if (!root) return;
+    const box = new THREE.Box3().setFromObject(root);
+    centerAndFit(root, box);
   };
 
   const handleScreenshot = () => {
@@ -766,10 +853,11 @@ const guiMountRef = useRef<HTMLDivElement>(null);
     stopRecording,
   }));
 
-  // ===== Render (sin botones internos) =====
   return (
     <div ref={outerRef} className="w-full h-full relative">
       <div ref={mountRef} className="absolute inset-0" />
+      {/* Panel NUEVO (separado) */}
+      <ControlsPanel controls={controlsState} onControlsChange={applyControls} />
     </div>
   );
 });

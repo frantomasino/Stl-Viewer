@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Analytics } from "@vercel/analytics/react"; // ✅ import correcto
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -20,7 +19,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );
