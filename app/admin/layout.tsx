@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Analytics } from "@vercel/analytics/react"; // 👈 corregido import
 import { ThemeProvider } from "@/components/theme-provider";
 import { Suspense } from "react";
 
@@ -30,7 +29,6 @@ export default function AdminLayout({
           {children}
         </ThemeProvider>
       </Suspense>
-      <Analytics />
     </div>
   );
 }
