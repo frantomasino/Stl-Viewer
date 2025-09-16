@@ -128,9 +128,7 @@ function DualRange({
     <div className="mb-2">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-gray-300">▼ {title}</span>
-        <span className="text-[10px] text-gray-400">
-          {minV.toFixed(5)} … {maxV.toFixed(5)}
-        </span>
+         
       </div>
 
       <div ref={trackRef} className="relative h-6 select-none" onMouseDown={onTrackClick}>
