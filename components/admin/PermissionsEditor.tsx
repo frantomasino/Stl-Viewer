@@ -75,6 +75,17 @@ export function PermissionsEditor({ users, projects, acl, onACLChange }: Permiss
     })
   }
 
+  const formatDate = (created: any) => {
+    if (!created) return ""
+    // Firestore Timestamp
+    if (typeof created === "object" && typeof created.toDate === "function") {
+      return created.toDate().toLocaleDateString("es-AR")
+    }
+    // String o número
+    const date = new Date(created)
+    return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR")
+  }
+
   const selectedUserProjectIds = selectedUser ? getUserProjectIds(selectedUser.id) : []
   const allProjectsGranted = selectedUser && selectedUserProjectIds.length === projects.length
   const someProjectsGranted = selectedUser && selectedUserProjectIds.length > 0
@@ -173,7 +184,7 @@ export function PermissionsEditor({ users, projects, acl, onACLChange }: Permiss
                     </label>
                     <div className="text-sm text-muted-foreground">
                       <span className="mr-3">Type: {project.type}</span>
-                      <span>Date: {new Date(project.date).toLocaleDateString()}</span>
+                      <span>Date: {formatDate(project.created)}</span>
                     </div>
                     <div className="text-xs text-muted-foreground font-mono">{project.path}</div>
                   </div>
