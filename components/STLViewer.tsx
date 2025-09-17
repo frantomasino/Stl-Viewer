@@ -5,8 +5,12 @@ import { Home, Camera, Circle, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/ThemeToggle"
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 import ThreeViewer, { ThreeViewerHandle } from "@/components/three-viewer";
 import { AppSidebar } from "@/components/ui/app-sidebar";
@@ -41,9 +45,9 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
         const data: Project[] = await res.json();
         if (!mounted) return;
         setProjects(data);
-        if (!selectedModel && data.length > 0) {
-          setSelectedModel(data[0].name);
-        }
+        // if (!selectedModel && data.length > 0) {
+        //   setSelectedModel(data[0].name);
+        // }
       } catch (e) {
         console.error("❌ Error cargando projects.json:", e);
       }
@@ -51,7 +55,7 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
     return () => {
       mounted = false;
     };
-  }, [selectedModel]);
+  }, []);
 
   const handleRecord = async () => {
     if (!viewerRef.current) return;
@@ -93,11 +97,9 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
         <div className="border-b p-3 sm:p-4 flex items-center justify-between ">
           <div className="flex items-center gap-2 sm:gap-3">
             <SidebarTrigger />
-        {/* origi outline */}
+            {/* origi outline */}
 
             {selectedModel && (
-
-              
               <Badge variant="secondary" className="ml-2">
                 Proyecto: {selectedModel}
               </Badge>
@@ -108,7 +110,11 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
               variant="outline"
               size="sm"
               onClick={handleRecord}
-              className={isRecording ? "bg-red-600 text-white border-red-600 hover:bg-red-700" : ""}
+              className={
+                isRecording
+                  ? "bg-red-600 text-white border-red-600 hover:bg-red-700"
+                  : ""
+              }
               title={isRecording ? "Detener grabación" : "Iniciar grabación"}
             >
               {isRecording ? (
@@ -121,7 +127,6 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
                 </>
               )}
             </Button>
-
 
             {/* Home */}
             <Button
@@ -144,18 +149,17 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
               <Camera className="w-4 h-4 mr-2" />
               Screenshot
             </Button>
-              <ThemeToggle />
+            <ThemeToggle />
 
-              <div className="flex items-center gap-2">
-               <div id="controls-dock" className="relative" />
-               </div>
-
+            <div className="flex items-center gap-2">
+              <div id="controls-dock" className="relative" />
+            </div>
           </div>
         </div>
 
         {/* Viewer */}
         <div className="flex-1 relative min-h-0">
-          <div className="absolute inset-0">
+          <div id="viewer-root" className="absolute inset-0">
             {selectedPath ? (
               <>
                 {/* Overlay REC sobre el canvas (opcional) */}
@@ -169,10 +173,17 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
                 )}
 
                 {/* Controlamos el visor con ref */}
-                <ThreeViewer ref={viewerRef} modelPath={encodeURI(selectedPath)} />
+                <ThreeViewer
+                  ref={viewerRef}
+                  modelPath={encodeURI(selectedPath)}
+                />
               </>
             ) : (
-              <p className="text-white">⚠️ No hay modelo seleccionado</p>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-black text-lg font-semibold opacity-80">
+                  ⚠️ SELECCIONE UN PROYECTO PARA CONTINUAR
+                </p>
+              </div>
             )}
           </div>
         </div>

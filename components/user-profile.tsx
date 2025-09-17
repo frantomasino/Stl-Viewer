@@ -260,7 +260,7 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
             </DialogContent>
           </Dialog>
 
-          <DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer hover:bg-gray-100">
             <GoToAdminLink />
           </DropdownMenuItem>
 
