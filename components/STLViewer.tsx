@@ -90,12 +90,15 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
       />
 
       <SidebarInset className="min-h-0">
-        <div className="border-b p-3 sm:p-4 flex items-center justify-between bg-white">
+        <div className="border-b p-3 sm:p-4 flex items-center justify-between ">
           <div className="flex items-center gap-2 sm:gap-3">
             <SidebarTrigger />
+        {/* origi outline */}
 
             {selectedModel && (
-              <Badge variant="outline" className="ml-2">
+
+              
+              <Badge variant="secondary" className="ml-2">
                 Proyecto: {selectedModel}
               </Badge>
             )}
@@ -142,6 +145,11 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
               Screenshot
             </Button>
               <ThemeToggle />
+
+              <div className="flex items-center gap-2">
+               <div id="controls-dock" className="relative" />
+               </div>
+
           </div>
         </div>
 

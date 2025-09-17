@@ -144,12 +144,13 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(({ modelPath
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf8f9fa);
+    // scene.background = new THREE.Color(0x000000);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(60, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.05, 500);
     camera.position.set(5, 5, 5);
     cameraRef.current = camera;
-    scene.add(camera);
+    // scene.add(camera);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, stencil: true });
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
@@ -163,10 +164,22 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(({ modelPath
     controls.enablePan = true;
     controlsRef.current = controls;
 
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(10, 10, 10);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    // const light = new THREE.DirectionalLight(0xffffff, 1);
+    // light.position.set(0 ,0 ,10);
+    // scene.add(light);
+    // scene.add(new THREE.DirectionalLightHelper(light));
+    // scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    directionalLight.position.set(0, 0, 10); // luz "frontal"
+    camera.add(directionalLight); // 👈 la luz se mueve con la cámara
+    camera.add(ambientLight);
+    scene.add(camera);     
+    // scene.add(new THREE.DirectionalLightHelper(cameraLight));
+
+
+
 
    const gizmo = new ViewportGizmo(camera, renderer, {
       type: "sphere",
