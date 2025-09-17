@@ -170,8 +170,8 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(({ modelPath
     // scene.add(new THREE.DirectionalLightHelper(light));
     // scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     directionalLight.position.set(0, 0, 10); // luz "frontal"
     camera.add(directionalLight); // 👈 la luz se mueve con la cámara
     camera.add(ambientLight);

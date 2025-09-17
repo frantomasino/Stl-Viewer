@@ -128,12 +128,7 @@ function DualRange({
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-300">▼ {title}</span>
-
         </div>
-
-        {/* <span className="text-[10px] text-gray-400">
-          {(minV as number).toFixed(5)} {"\u2026"} {(maxV as number).toFixed(5)}
-        </span> */}
       </div>
 
       <div
@@ -176,8 +171,8 @@ function DualRange({
 export default function ControlsPanel({ controls, onControlsChange }: Props) {
   // estado de visibilidad/colapso/anclado (persistente)
   const [open, setOpen] = React.useState(true);
-  const [collapsed, setCollapsed] = React.useState(false);
-  const [pinned, setPinned] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(true);
+  const [pinned, setPinned] = React.useState(true);
   // guarda el estado de colapso “flotante” para restaurarlo al despinnear
   const prevCollapsedRef = React.useRef(false);
 
@@ -228,6 +223,25 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     dx: number;
     dy: number;
   }>({ on: false, dx: 0, dy: 0 });
+
+  // ====== NUEVO: calcular pos a la IZQ del render sin esperar a un frame ======
+  const calcSnapLeftPos = React.useCallback(() => {
+    const anchor =
+      document.getElementById("viewer-root") ||
+      document.getElementById("three-viewer-root") ||
+      document.getElementById("three-container") ||
+      document.getElementById("canvas-root");
+
+    if (anchor) {
+      const r = anchor.getBoundingClientRect();
+      return {
+        x: Math.max(8, r.left + 8),   // pegado a la izq del viewer
+        y: Math.max(56, r.top + 56),  // debajo del navbar
+      };
+    }
+    return { x: 16, y: 56 };
+  }, []);
+  // ===========================================================================
 
   const onHeaderDown = (e: React.MouseEvent) => {
     if (pinned) return; // no drag cuando está anclado
@@ -419,10 +433,10 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
 
               if (pinned && collapsed) {
                 // Estaba pineado y colapsado → “maximizar” = despinnear y volver a flotante
+                setPos(calcSnapLeftPos());    // ← fijar pos ANTES
                 setPinned(false);
                 setCollapsed(false); // volvé expandido
                 setOpen(true);
-                // snapLeft();            // opcional: anclar a la izq al volver
                 return;
               }
 
@@ -441,11 +455,13 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
                 const nowPinned = !wasPinned;
                 if (nowPinned) {
                   // me voy al navbar → colapso
-                  prevCollapsedRef.current = collapsed; // guardo cómo estaba
+                  prevCollapsedRef.current = collapsed; // (si querés recuperar luego)
                   setCollapsed(true);
                 } else {
+                  // vuelvo a flotante → fijar pos ANTES para evitar salto
+                  setPos(calcSnapLeftPos());
                   setOpen(true);       // aseguro que se vea el header flotante
-                  setCollapsed(true);  // lo dejás minimizado
+                  setCollapsed(true);  // lo dejás minimizado (si querés expandido poné false)
                 }
                 return nowPinned;
               });
@@ -461,13 +477,14 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     </div>
   );
 
-  // ← AGREGADO: botón compacto para navbar cuando está pineado + colapsado
+  // botón compacto para navbar cuando está pineado + colapsado
   const pinnedChip = (
     <Button
       variant="outline"
       size="sm"
       onClick={() => {
-        // salir del navbar y volver flotante expandido
+        // salir del navbar y volver flotante expandido SIN salto
+        setPos(calcSnapLeftPos());  // ← fijar pos ANTES
         setPinned(false);
         setCollapsed(false);
         setOpen(true);
@@ -485,7 +502,6 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
   const dockEl = mounted ? document.getElementById("controls-dock") : null;
 
   if (pinned && dockEl) {
-    // ← AGREGADO: si está colapsado, mostrar botón tamaño navbar
     if (collapsed) return createPortal(pinnedChip, dockEl);
     return createPortal(panelChrome, dockEl);
   }
