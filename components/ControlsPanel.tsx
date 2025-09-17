@@ -110,9 +110,9 @@ function DualRange({
   };
 
   const accentMap: Record<"R" | "A" | "S", string> = {
-    R: "#ef4444",
-    A: "#22c55e",
-    S: "#3b82f6",
+    R: "#ff3654b3",
+    A: "#8ADB00b3",
+    S: "#2C8FFFb3",
   };
   const fillColor = accent ? accentMap[accent] : "#9ca3af";
 
@@ -371,17 +371,18 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
       />
       <DualRange
         title="A"
-        value={controls.windowY}
-        limits={controls.limits.y}
-        onChange={(v) => onControlsChange({ windowY: v })}
-        accent="A"
-        swapKnobs
-      />
-      <DualRange
-        title="S"
         value={controls.windowZ}
         limits={controls.limits.z}
         onChange={(v) => onControlsChange({ windowZ: v })}
+        swapKnobs={true}
+        accent="A"
+      />
+      <DualRange
+        title="S"
+        value={controls.windowY}
+        limits={controls.limits.y}
+        onChange={(v) => onControlsChange({ windowY: v })}
+        swapKnobs={true}
         accent="S"
       />
     </div>
