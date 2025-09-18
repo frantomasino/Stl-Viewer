@@ -1,24 +1,32 @@
-import type { ReactNode } from "react";
-import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { ThemeProvider } from "@/components/theme-provider";
-import "./globals.css";
+import type React from "react"
+import type { Metadata } from "next"
+import "./globals.css"
+import ClientLayout from "./ClientLayout"
 
 export const metadata: Metadata = {
-  title: "3D visualizer",
-  description: "3D visualizer",
-  generator: "v0.dev",
-};
+  title: "LAMBDA 3D - Innovación 3D para la salud y la educación",
+  description:
+    "Transformamos la manera en que los profesionales de la salud y los educadores abordan sus problemáticas mediante soluciones innovadoras en biomodelos e impresión 3D.",
+  generator: "v0.app",
+  keywords: ["biomodelos", "impresión 3D", "salud", "educación", "planificación quirúrgica", "maquetas anatómicas"],
+  openGraph: {
+    title: "LAMBDA 3D - Innovación 3D para la salud y la educación",
+    description: "Soluciones innovadoras en biomodelos e impresión 3D para profesionales de la salud y educadores.",
+    type: "website",
+    locale: "es_AR",
+  },
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`min-h-dvh font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+    <html lang="es">
+      <body>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
-  );
+  )
 }

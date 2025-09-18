@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-import ThreeViewer, { ThreeViewerHandle } from "@/components/three-viewer";
+import ThreeViewer, { ThreeViewerHandle } from "@/components/visualizador/three-viewer";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 
 type Project = {
