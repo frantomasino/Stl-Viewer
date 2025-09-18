@@ -1,11 +1,28 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight,ArrowLeft, Play } from "lucide-react";
 
 export function ViewerIntro() {
   return (
     <section className="py-24 lg:py-32 bg-gradient-to-b from-background to-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    {/* Botón regresar arriba a la izquierda */}
+        <div className="mb-8">
+          <Button
+            variant="outline"
+            asChild
+            className="rounded-full px-6 py-2 text-sm font-medium"
+          >
+            <Link href="/">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver al inicio
+            </Link>
+          </Button>
+        </div>
+
+
+
+
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-balance">
             Visualizador 3D
@@ -42,18 +59,16 @@ export function ViewerIntro() {
             </Button>
           </div>
 
-          <div className="pt-16">
-            <div className="aspect-video bg-muted rounded-2xl flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                  <Play className="h-8 w-8 text-primary" />
-                </div>
-                <p className="text-muted-foreground">
-                  El visualizador 3D estará disponible próximamente
-                </p>
-              </div>
-            </div>
-          </div>
+<div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg">
+  <iframe
+    className="w-full h-full"
+    src="/vid/vid1.mp4"
+    title="Video demo"
+    frameBorder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+  ></iframe>
+</div>
         </div>
       </div>
     </section>

@@ -1,26 +1,39 @@
-"use client"
-import * as React from "react"
-import { Card } from "@/components/ui/card"
+"use client";
+import * as React from "react";
+import { Card } from "@/components/ui/card";
 import {
   Sidebar as SidebarRoot,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+import Link from "next/link";
 export interface Project {
-  name: string
-  path: string
-  type: string
-  date: string
+  name: string;
+  path: string;
+  type: string;
+  date: string;
 }
 
 interface AppSidebarProps {
-  projects: Project[]
-  selectedModel: string
-  onModelSelect: (modelName: string) => void
-  user?: any
-  handleLogout?: () => void
+  projects: Project[];
+  selectedModel: string;
+  onModelSelect: (modelName: string) => void;
+  user?: any;
+  handleLogout?: () => void;
 }
 
 /** Acordeón con animación de altura */
@@ -30,32 +43,32 @@ function AccordionSection({
   onToggle,
   children,
 }: {
-  title: string
-  open: boolean
-  onToggle: () => void
-  children: React.ReactNode
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
 }) {
-  const contentRef = React.useRef<HTMLDivElement | null>(null)
-  const [maxH, setMaxH] = React.useState<number>(0)
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
+  const [maxH, setMaxH] = React.useState<number>(0);
 
   // recalcular altura al abrir/cerrar y en resize
   React.useEffect(() => {
-    const el = contentRef.current
-    if (!el) return
+    const el = contentRef.current;
+    if (!el) return;
     // medimos el contenido real
-    const h = el.scrollHeight
-    setMaxH(open ? h : 0)
-  }, [open, children])
+    const h = el.scrollHeight;
+    setMaxH(open ? h : 0);
+  }, [open, children]);
 
   React.useEffect(() => {
     const onResize = () => {
-      const el = contentRef.current
-      if (!el) return
-      setMaxH(open ? el.scrollHeight : 0)
-    }
-    window.addEventListener("resize", onResize)
-    return () => window.removeEventListener("resize", onResize)
-  }, [open])
+      const el = contentRef.current;
+      if (!el) return;
+      setMaxH(open ? el.scrollHeight : 0);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [open]);
 
   return (
     <div className="w-full">
@@ -65,9 +78,7 @@ function AccordionSection({
         role="button"
         aria-expanded={open}
       >
-        <h2 className="section">
-          {title}
-        </h2>
+        <h2 className="section">{title}</h2>
         <span className="text-gray-500 text-xs">{open ? "▲" : "▼"}</span>
       </div>
 
@@ -83,7 +94,7 @@ function AccordionSection({
         <div className="p-3">{children}</div>
       </div>
     </div>
-  )
+  );
 }
 
 export function AppSidebar({
@@ -92,22 +103,41 @@ export function AppSidebar({
   onModelSelect,
 }: AppSidebarProps) {
   // estados de acordeón
-  const [openProjects, setOpenProjects] = React.useState(true)
-  const [openInstructions, setOpenInstructions] = React.useState(false)
+  const [openProjects, setOpenProjects] = React.useState(true);
+  const [openInstructions, setOpenInstructions] = React.useState(false);
 
   return (
     <SidebarRoot>
       <SidebarContent>
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <img
-              src="logo.png"
-              alt="Lambda 3D"
-              style={{ width: "auto", height: "150px" }}
-            />
-          </div>
-        </div>
+{/* Logo */}
+<div className="p-6 border-b border-gray-200">
+  <div className="flex items-center gap-3">
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <img
+          src="/logo.png"
+          alt="Lambda 3D"
+          style={{ width: "auto", height: "150px", cursor: "pointer" }}
+        />
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Querés salir?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Vas a ser redirigido a la página principal.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <Link href="/">Sí, salir</Link>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>
+</div>
 
         {/* PROYECTOS (acordeón) */}
         <SidebarGroup>
@@ -115,7 +145,7 @@ export function AppSidebar({
             <AccordionSection
               title="Proyectos"
               open={openProjects}
-              onToggle={() => setOpenProjects(v => !v)}
+              onToggle={() => setOpenProjects((v) => !v)}
             >
               <div className="space-y-2">
                 {projects.map((p, idx) => (
@@ -152,7 +182,7 @@ export function AppSidebar({
             <AccordionSection
               title="Instrucciones"
               open={openInstructions}
-              onToggle={() => setOpenInstructions(v => !v)}
+              onToggle={() => setOpenInstructions((v) => !v)}
             >
               <div className="text-xs text-gray-600 space-y-2">
                 <p>• Haz clic en un proyecto para cargarlo</p>
@@ -166,7 +196,7 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
     </SidebarRoot>
-  )
+  );
 }
 
-export default AppSidebar
+export default AppSidebar;
