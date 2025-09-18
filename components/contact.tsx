@@ -8,28 +8,52 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Send, Smartphone  } from "lucide-react";
+import { Mail, MapPin, Send, Smartphone } from "lucide-react";
+
+// Import correcto según tu estructura
+import { sendContactMessage } from "../lib/firebase";
 
 export function Contact() {
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
+    telefono: "",
     mensaje: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Form submission logic would go here
-    console.log("Form submitted:", formData);
-  };
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<null | "ok" | "err">(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatus(null);
+    setErrorMsg(null);
+
+    try {
+      await sendContactMessage({
+        name: formData.nombre.trim(),
+        email: formData.email.trim(),
+        phone: formData.telefono.trim(),
+        message: formData.mensaje.trim(),
+      });
+
+      setStatus("ok");
+      setFormData({ nombre: "", email: "", telefono: "", mensaje: "" });
+    } catch (err: any) {
+      console.error(err);
+      setStatus("err");
+      setErrorMsg(err?.message ?? "No se pudo enviar el mensaje.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,9 +86,11 @@ export function Contact() {
                     value={formData.nombre}
                     onChange={handleChange}
                     required
+                    maxLength={100}
                     className="rounded-xl"
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -77,6 +103,22 @@ export function Contact() {
                     className="rounded-xl"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="telefono">Teléfono</Label>
+                  <Input
+                    id="telefono"
+                    name="telefono"
+                    type="tel"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    required
+                    maxLength={30}
+                    className="rounded-xl"
+                    placeholder="+54 9 2346 30-0627"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="mensaje">Mensaje</Label>
                   <Textarea
@@ -86,17 +128,31 @@ export function Contact() {
                     value={formData.mensaje}
                     onChange={handleChange}
                     required
+                    maxLength={5000}
                     className="rounded-xl resize-none"
                     placeholder="Contanos sobre tu proyecto..."
                   />
                 </div>
+
                 <Button
                   type="submit"
                   className="w-full rounded-2xl py-3 text-base font-medium group"
+                  disabled={loading}
                 >
                   <Send className="h-4 w-4 mr-2 transition-transform group-hover:translate-x-1" />
-                  Enviar
+                  {loading ? "Enviando..." : "Enviar"}
                 </Button>
+
+                {status === "ok" && (
+                  <p className="text-sm text-green-700">
+                    ✅ ¡Mensaje enviado! Te vamos a contactar.
+                  </p>
+                )}
+                {status === "err" && (
+                  <p className="text-sm text-red-700">
+                    ❌ Hubo un problema. {errorMsg}
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>
@@ -125,16 +181,13 @@ export function Contact() {
                   </div>
                   <div>
                     <p className="font-medium">Teléfono</p>
-               
-                      <Link
-                        href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Quiero%20que%20me%20pases%20mas%20informacion%20sobre...
-"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        +54 9 2346 30-0627
-                      </Link>
-                   
+                    <Link
+                      href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Quiero%20que%20me%20pases%20mas%20informacion%20sobre..."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      +54 9 2346 30-0627
+                    </Link>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -143,9 +196,7 @@ export function Contact() {
                   </div>
                   <div>
                     <p className="font-medium">Ubicación</p>
-                    <p className="text-muted-foreground">
-                      Chivilcoy, Argentina
-                    </p>
+                    <p className="text-muted-foreground">Chivilcoy, Argentina</p>
                   </div>
                 </div>
               </div>

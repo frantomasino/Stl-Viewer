@@ -22,6 +22,9 @@ import {
   query,
   where,
   doc,
+  serverTimestamp,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import bcrypt from "bcryptjs";
 
@@ -54,7 +57,6 @@ const firebaseConfig = {
   messagingSenderId: "998564690654",
   appId: "1:998564690654:web:e65371fa213ecec699a04f"
 }; 
-
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
@@ -107,7 +109,7 @@ export const loginWithFirestoreUser = async (
   try {
     const usersRef = collection(db, "users");
 
-    // Buscar   email
+    // Buscar por email
     const qEmail = query(usersRef, where("email", "==", identifier));
     let snapshot = await getDocs(qEmail);
     let userSnap = snapshot.docs[0];
@@ -179,9 +181,6 @@ export const changePassword = async (
   }
 };
 
-
-
-
 export type UserRole = "ADMIN" | "USER" | "TRIAL"
 
 export interface FirebaseUser {
@@ -194,6 +193,7 @@ export interface FirebaseUser {
   created?: Date
   updatedAt?: Date
 }
+
 // User management functions
 export const createUser = async (userData: Omit<FirebaseUser, "id" | "createdAt" | "updatedAt">) => {
   try {
@@ -234,7 +234,6 @@ export const deleteUser = async (userId: string) => {
 export const getUsers = async (): Promise<FirebaseUser[]> => {
   try {
     const querySnapshot = await getDocs(collection(db, "users"))
-    console.log(querySnapshot)
     return querySnapshot.docs.map(
       (doc) =>
         ({
@@ -265,8 +264,7 @@ export const getUsersByRole = async (role: UserRole): Promise<FirebaseUser[]> =>
   }
 }
 
-
-/////proyectos
+// ----- proyectos -----
 export interface FirebaseProject {
   id?: string
   name: string
@@ -347,3 +345,46 @@ export const getProjectsByStatus = async (status: string): Promise<FirebaseProje
     throw error
   }
 }
+
+/* =========================
+   CONTACTO (con teléfono)
+   ========================= */
+
+export interface ContactMessage {
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  // createdAt lo setea el server con serverTimestamp()
+}
+
+export const sendContactMessage = async (
+  data: Omit<ContactMessage, "id">
+): Promise<string> => {
+  // Validaciones mínimas en front (las reglas vuelven a validar en servidor)
+  if (!data.name?.trim()) throw new Error("Falta nombre");
+  if (!data.email?.trim()) throw new Error("Falta email");
+  if (!data.phone?.trim()) throw new Error("Falta teléfono");
+  if (!data.message?.trim()) throw new Error("Falta mensaje");
+
+  const ref = await addDoc(collection(db, "contactMessages"), {
+    name: data.name.trim(),
+    email: data.email.trim(),
+    phone: data.phone.trim(),
+    message: data.message.trim(),
+    createdAt: serverTimestamp(), // requerido por la regla
+  });
+  return ref.id;
+};
+
+// Solo ADMIN podrá leer por reglas
+export const getContactMessages = async (max: number = 50): Promise<ContactMessage[]> => {
+  const qy = query(
+    collection(db, "contactMessages"),
+    orderBy("createdAt", "desc"),
+    limit(max)
+  );
+  const snap = await getDocs(qy);
+  return snap.docs.map(d => ({ id: d.id, ...(d.data() as ContactMessage) }));
+};
