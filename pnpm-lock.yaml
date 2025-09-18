@@ -99,7 +99,7 @@ importers:
         specifier: latest
         version: 9.3.0(c43166bb7e2303ea9bb19cd0f480ebae)
       '@vercel/analytics':
-        specifier: 1.5.0
+        specifier: ^1.5.0
         version: 1.5.0(next@15.2.4(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)
       autoprefixer:
         specifier: 10.4.20
