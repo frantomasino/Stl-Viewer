@@ -5,6 +5,7 @@ import { Home, Camera, Circle, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
 import {
   SidebarProvider,
   SidebarInset,
@@ -177,6 +178,7 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
                   ref={viewerRef}
                   modelPath={encodeURI(selectedPath)}
                 />
+                
               </>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">

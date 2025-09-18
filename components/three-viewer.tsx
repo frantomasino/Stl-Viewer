@@ -567,7 +567,7 @@ setControlsState((p) => ({ ...p, explode: 0 }));
       if (explodeFactorRef.current > 0) {
         setSceneClippingEnabled(false);
       } else {
-        alignPlanesToCurrentModel();
+        // alignPlanesToCurrentModel();
         if (currentRootRef.current) updateClipOffsetControllersRangeFromRoot(currentRootRef.current);
         setSceneClippingEnabled(true);
         updateClippingState();
@@ -842,13 +842,29 @@ setControlsState((p) => ({ ...p, explode: 0 }));
   }
 
   // ===== Botones Home / Screenshot =====
-  const handleHome = () => {
-    const root = currentRootRef.current;
-    if (!root) return;
-    const box = new THREE.Box3().setFromObject(root);
-    centerAndFit(root, box);
-  };
+const handleHome = () => {
+  const root = currentRootRef.current;
+  if (!root) return;
 
+  const box = new THREE.Box3().setFromObject(root);
+  const camera = cameraRef.current!;
+  const controls = controlsRef.current!;
+
+  const c = box.getCenter(new THREE.Vector3());
+  const s = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(s.x, s.y, s.z);
+  const fov = camera.fov * (Math.PI / 180);
+  const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+  // Sólo movemos cámara y target; NO tocamos root.position/scale
+  camera.position.set(c.x, c.y, cameraZ * 2);
+  camera.lookAt(c);
+  controls.target.copy(c);
+  controls.update();
+
+  // Si no estamos explotando, mantenemos el estado de clipping tal cual
+  if (!isExploding()) updateClippingState();
+};
   const handleScreenshot = () => {
     const renderer = rendererRef.current;
     if (!renderer) return;
