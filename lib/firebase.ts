@@ -26,6 +26,8 @@ import {
   serverTimestamp,
   orderBy,
   limit,
+    writeBatch,
+  documentId,
 } from "firebase/firestore";
 import bcrypt from "bcryptjs";
 
@@ -48,6 +50,79 @@ function getErrorMessage(error: unknown): string {
   }
   return "Ocurrió un error inesperado";
 }
+// =========== MEMBERSHIPS ===========
+export type ProjectMemberRole = "owner" | "editor" | "viewer";
+export interface Membership {
+  userId: string;
+  projectId: string;
+  role: ProjectMemberRole;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+const membershipId = (userId: string, projectId: string) => `${userId}_${projectId}`;
+
+export async function assignUserToProject(
+  userId: string,
+  projectId: string,
+  role: ProjectMemberRole = "viewer"
+): Promise<void> {
+  await setDoc(doc(db, "memberships", membershipId(userId, projectId)), {
+    userId, projectId, role,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+export async function unassignUserFromProject(userId: string, projectId: string): Promise<void> {
+  await deleteDoc(doc(db, "memberships", membershipId(userId, projectId)));
+}
+
+export async function replaceUserMemberships(userId: string, targetProjectIds: string[]): Promise<void> {
+  // Reemplaza TODO el set de proyectos de un usuario
+  const qy = query(collection(db, "memberships"), where("userId", "==", userId));
+  const snap = await getDocs(qy);
+  const current = new Set(snap.docs.map(d => (d.data() as Membership).projectId));
+  const target = new Set(targetProjectIds);
+
+  const toAdd = [...target].filter(id => !current.has(id));
+  const toDel = [...current].filter(id => !target.has(id));
+
+  const batch = writeBatch(db);
+  for (const pid of toAdd) {
+    batch.set(doc(db, "memberships", membershipId(userId, pid)), {
+      userId, projectId: pid, role: "viewer",
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    }, { merge: true });
+  }
+  for (const pid of toDel) {
+    batch.delete(doc(db, "memberships", membershipId(userId, pid)));
+  }
+  await batch.commit();
+}
+
+// Leer projectIds de un user
+export async function getUserProjectIds(userId: string): Promise<string[]> {
+  const qy = query(collection(db, "memberships"), where("userId", "==", userId));
+  const snap = await getDocs(qy);
+  return snap.docs.map(d => (d.data() as Membership).projectId);
+}
+
+// Traer proyectos por IDs (chunk de 10)
+export async function getProjectsByIds(ids: string[]): Promise<FirebaseProject[]> {
+  if (ids.length === 0) return [];
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+
+  const out: FirebaseProject[] = [];
+  for (const group of chunks) {
+    const qy = query(collection(db, "projects"), where(documentId(), "in", group));
+    const snap = await getDocs(qy);
+    out.push(...snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
+  }
+  return out;
+}
+
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -71,6 +146,7 @@ export const provider = new GoogleAuthProvider();
 export const loginWithGoogle = async (): Promise<LoginResult> => {
   try {
     await signInWithPopup(auth, provider);
+    await ensureUserDoc(); 
     return true;
   } catch (error: unknown) {
     console.error("Error al iniciar sesión con Google:", error);
@@ -82,6 +158,7 @@ export const loginWithGoogle = async (): Promise<LoginResult> => {
 export const loginWithEmail = async (email: string, password: string): Promise<LoginResult> => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    await ensureUserDoc(); 
     return true;
   } catch (error: unknown) {
     const code = (error as FirebaseError)?.code;
@@ -194,6 +271,43 @@ export interface FirebaseUser {
   created?: Date
   updatedAt?: Date
 }
+// lib/firebase.ts  ➜ reemplazá tu ensureUserDoc por este
+
+
+export const ensureUserDoc = async (): Promise<void> => {
+  const u = auth.currentUser;
+  if (!u) return;
+
+  const ref = doc(db, "users", u.uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    // SOLO en la creación pongo role por defecto
+    await setDoc(
+      ref,
+      {
+        uid: u.uid,
+        name: u.displayName ?? "",
+        email: u.email ?? "",
+        role: "USER",          // ← default inicial, NO se reescribe luego
+        department: "",
+        status: "active",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } else {
+    // Si ya existe, NO toco role ni otros campos manuales
+    // (solo actualizo updatedAt y relleno mínimos si faltan)
+    const curr = snap.data() as any;
+    const patch: any = { updatedAt: serverTimestamp() };
+    if (curr?.uid == null) patch.uid = u.uid;
+    if (curr?.email == null && u.email) patch.email = u.email;
+    if (curr?.name == null && u.displayName) patch.name = u.displayName;
+    await setDoc(ref, patch, { merge: true });
+  }
+};
 
 // User management functions
 export const createUser = async (userData: Omit<FirebaseUser, "id" | "createdAt" | "updatedAt">) => {
