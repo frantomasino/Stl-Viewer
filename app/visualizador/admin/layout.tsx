@@ -5,6 +5,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Suspense } from "react";
+import AdminGuardClient from "@/components/visualizador/admin/AdminGuardClient";
 
 export const metadata: Metadata = {
   title: "Admin Panel UI",
@@ -26,7 +27,7 @@ export default function AdminLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+           <AdminGuardClient>{children}</AdminGuardClient>
         </ThemeProvider>
       </Suspense>
     </div>

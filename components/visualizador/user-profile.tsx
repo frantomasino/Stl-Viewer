@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useIsAdminFromUsers } from "@/hooks/useIsAdminFromUsers";
+
 import { GoToAdminLink } from "./UserLinks"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
@@ -30,6 +32,7 @@ type UserProfileProps = {
   } | null
   handleLogout?: () => void
 }
+
 
 const initialsFrom = (name: string) =>
   (name || "U").trim().split(/\s+/).map(n => n[0]?.toUpperCase() ?? "").join("").slice(0, 2) || "U"
@@ -62,6 +65,7 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
   const [authReady, setAuthReady] = useState(false)            // ← NUEVO: evita leer antes de tiempo
   const initials = initialsFrom(profile.name)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { isAdmin, loading: isAdminLoading } = useIsAdminFromUsers();
 
   // Esperar a que Firebase Auth esté listo y obtener UID
   useEffect(() => {
@@ -260,10 +264,11 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
             </DialogContent>
           </Dialog>
 
+          {!isAdminLoading &&isAdmin && (
           <DropdownMenuItem className="cursor-pointer hover:bg-gray-100">
             <GoToAdminLink />
           </DropdownMenuItem>
-
+          )}
           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer hover:bg-gray-100">
             <LogOut className="mr-2 h-4 w-4 text-red-500" />
             <span className="text-red-500">Cerrar sesión</span>
