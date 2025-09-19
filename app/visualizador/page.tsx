@@ -158,11 +158,11 @@ export function initAuthSessionSync() {
   const auth = getAuth();
   onIdTokenChanged(auth, async (u) => {
     const token = u ? await u.getIdToken() : "";
-    await fetch("/api/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
+    // await fetch("/api/session", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ token }),
+    // });
   });
 }
 

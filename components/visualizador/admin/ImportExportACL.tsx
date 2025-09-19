@@ -94,7 +94,7 @@ export function ImportExportACL({ onACLChange }: ImportExportACLProps) {
 
   return (
     <>
-      <div className="flex gap-2">
+      {/* <div className="flex gap-2">
         <Button onClick={handleExport} variant="outline" size="sm">
           <Download className="h-4 w-4 mr-2" />
           Export ACL
@@ -109,7 +109,7 @@ export function ImportExportACL({ onACLChange }: ImportExportACLProps) {
           <RotateCcw className="h-4 w-4 mr-2" />
           Reset ACL
         </Button>
-      </div>
+      </div> */}
 
       <Input ref={fileInputRef} type="file" accept=".json" onChange={handleFileChange} className="hidden" />
 

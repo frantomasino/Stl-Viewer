@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Home, Camera, Circle, Square } from "lucide-react";
-
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { getUserProjectIds, getProjectsByIds, type FirebaseProject } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,25 +40,34 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
 
   const selectedPath = projects.find((p) => p.name === selectedModel)?.path;
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch("/projects.json");
-        const data: Project[] = await res.json();
-        if (!mounted) return;
-        setProjects(data);
-        // if (!selectedModel && data.length > 0) {
-        //   setSelectedModel(data[0].name);
-        // }
-      } catch (e) {
-        console.error("❌ Error cargando projects.json:", e);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+useEffect(() => {
+  let mounted = true;
+  const stop = onAuthStateChanged(auth, async (u) => {
+    if (!u || !mounted) { setProjects([]); return; }
+
+    try {
+      // 1) ids de proyectos asignados
+      const ids = await getUserProjectIds(u.uid);
+
+      // 2) traer los proyectos
+      const docs: FirebaseProject[] = await getProjectsByIds(ids);
+
+      // 3) mapear a tu tipo local (name, path, type, date:string)
+      const data = docs.map(p => ({
+        name: p.name,
+        path: p.path,
+        type: p.type,
+        date: (p.created as any)?.toDate ? (p.created as any).toDate().toISOString() : String(p.created ?? ""),
+      }));
+
+      if (mounted) setProjects(data);
+    } catch (e) {
+      console.error("❌ Error cargando proyectos del usuario:", e);
+      if (mounted) setProjects([]);
+    }
+  });
+  return () => { mounted = false; stop(); };
+}, []);
 
   const handleRecord = async () => {
     if (!viewerRef.current) return;

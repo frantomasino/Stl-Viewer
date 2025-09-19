@@ -10,6 +10,7 @@ import { Search, CheckSquare, Square } from "lucide-react"
 import { grant, revoke, setAll, clearAll, type ACL } from "@/lib/acl"
 import { useToast } from "@/hooks/use-toast"
 import type { User, Project } from "./UsersTable"
+import { assignUserToProject, unassignUserFromProject, replaceUserMemberships } from "@/lib/firebase";
 
 interface PermissionsEditorProps {
   users: User[]
@@ -37,44 +38,34 @@ export function PermissionsEditor({ users, projects, acl, onACLChange }: Permiss
     return getUserProjectIds(userId).includes(projectId)
   }
 
-  const handleProjectToggle = (projectId: string, granted: boolean) => {
+  const handleProjectToggle = async  (projectId: string, granted: boolean) => {
     if (!selectedUser) return
+  // 1) Persistir
+  if (granted) await assignUserToProject(selectedUser.id, projectId, "viewer");
+  else await unassignUserFromProject(selectedUser.id, projectId);
 
-    const newACL = granted ? grant(selectedUser.id, projectId) : revoke(selectedUser.id, projectId)
+ // 2) Mantener tu estado ACL como hasta ahora
+  const newACL = granted ? grant(selectedUser.id, projectId) : revoke(selectedUser.id, projectId);
+  onACLChange(newACL);
 
-    onACLChange(newACL)
+  toast({ title: "Access Updated",
+    description: `${granted ? "Granted" : "Revoked"} access to ${projects.find(p => p.id === projectId)?.name}` });
+};
 
-    toast({
-      title: "Access Updated",
-      description: `${granted ? "Granted" : "Revoked"} access to ${projects.find((p) => p.id === projectId)?.name}`,
-    })
-  }
+const handleSelectAll = async () => {
+  if (!selectedUser) return;
+  const allIds = projects.map(p => p.id);
+  await replaceUserMemberships(selectedUser.id, allIds);
+  const newACL = setAll(selectedUser.id, allIds);
+  onACLChange(newACL);
+};
 
-  const handleSelectAll = () => {
-    if (!selectedUser) return
-
-    const allProjectIds = projects.map((p) => p.id)
-    const newACL = setAll(selectedUser.id, allProjectIds)
-    onACLChange(newACL)
-
-    toast({
-      title: "Access Updated",
-      description: "Granted access to all projects",
-    })
-  }
-
-  const handleClearAll = () => {
-    if (!selectedUser) return
-
-    const newACL = clearAll(selectedUser.id)
-    onACLChange(newACL)
-
-    toast({
-      title: "Access Updated",
-      description: "Cleared all project access",
-    })
-  }
-
+const handleClearAll = async () => {
+  if (!selectedUser) return;
+  await replaceUserMemberships(selectedUser.id, []);
+  const newACL = clearAll(selectedUser.id);
+  onACLChange(newACL);
+};
   const formatDate = (created: any) => {
     if (!created) return ""
     // Firestore Timestamp

@@ -132,7 +132,7 @@ export function FirebaseUserManager() {
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button
+                {/* <Button
                   onClick={() => {
                     setEditingUser(null)
                     setFormData({ name: "", email: "", role: "USER", department: "", status: "active" })
@@ -140,7 +140,7 @@ export function FirebaseUserManager() {
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add User
-                </Button>
+                </Button> */}
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
