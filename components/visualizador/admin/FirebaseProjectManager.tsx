@@ -72,47 +72,55 @@ export function FirebaseProjectManager() {
     }
   };
 
+function normalizeDropboxUrl(raw: string): string {
+  try {
+    let v = raw.trim()
+    if (!/^https?:\/\//i.test(v)) v = "https://" + v // por si pegan sin protocolo
+    const url = new URL(v)
+
+    if (url.hostname === "www.dropbox.com" || url.hostname === "dropbox.com") {
+      url.hostname = "dl.dropboxusercontent.com"
+      // Si SOLO querés cambiar dominio, no toques params.
+      // Si algún día querés forzar descarga, podés hacer:
+      // url.searchParams.set("dl", "1")
+    }
+    return url.toString()
+  } catch {
+    // si no es una URL válida, devolvés lo original
+    return raw
+  }
+}
+
   useEffect(() => {
     loadProjects();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (editingProject) {
-        await updateProject(editingProject.id!, formData);
-        toast({
-          title: "Success",
-          description: "Project updated successfully",
-        });
-      } else {
-        await createProject(formData);
-        toast({
-          title: "Success",
-          description: "Project created successfully",
-        });
-      }
-      setIsDialogOpen(false);
-      setEditingProject(null);
-      setFormData({
-        name: "",
-        description: "",
-        owner: "",
-        path: "",
-        status: "activo",
-        type: "",
-      });
-      loadProjects();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: `Failed to ${
-          editingProject ? "update" : "create"
-        } project`,
-        variant: "destructive",
-      });
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  try {
+    // 👇 normalizamos por si el usuario no salió del input
+    const normalized = { ...formData, path: normalizeDropboxUrl(formData.path) }
+
+    if (editingProject) {
+      await updateProject(editingProject.id!, normalized)
+      toast({ title: "Success", description: "Project updated successfully" })
+    } else {
+      await createProject(normalized)
+      toast({ title: "Success", description: "Project created successfully" })
     }
-  };
+    setIsDialogOpen(false)
+    setEditingProject(null)
+    setFormData({ name: "", description: "", owner: "", path: "", status: "activo", type: "" })
+    loadProjects()
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: `Failed to ${editingProject ? "update" : "create"} project`,
+      variant: "destructive",
+    })
+  }
+}
+
 
   const handleEdit = (project: FirebaseProject) => {
     setEditingProject(project);
@@ -279,15 +287,19 @@ export function FirebaseProjectManager() {
                   <div>
                     <Label htmlFor="path">Path (URL)</Label>
                     <Input
-                      id="path"
-                      type="url"
-                      value={formData.path}
-                      onChange={(e) =>
-                        setFormData({ ...formData, path: e.target.value })
-                      }
-                      placeholder="https://..."
-                      required
-                    />
+  id="path"
+  type="url"
+  value={formData.path}
+  onChange={(e) => setFormData({ ...formData, path: e.target.value })}
+  onBlur={(e) => {
+    const fixed = normalizeDropboxUrl(e.target.value)
+    if (fixed !== e.target.value) {
+      setFormData((p) => ({ ...p, path: fixed }))
+    }
+  }}
+  placeholder="https://..."
+  required
+/>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

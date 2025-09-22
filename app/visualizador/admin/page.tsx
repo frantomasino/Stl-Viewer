@@ -325,11 +325,11 @@ export default function AdminPanel() {
           </TabsTrigger>
           <TabsTrigger value="firebase-users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Firebase
+            User Editor
           </TabsTrigger>
                     <TabsTrigger value="firebase-projects" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Firebase projects
+            Projects Editor
           </TabsTrigger>
         </TabsList>
 

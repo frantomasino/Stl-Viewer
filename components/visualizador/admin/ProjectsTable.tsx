@@ -146,12 +146,12 @@ const formatDate = (created: any) => {
                   <p>
                     <strong>Description:</strong> {selectedProject.description}
                   </p>
-<p>
-  <strong>Status:</strong>{" "}
-  <Badge className={getStatusBadgeClass(selectedProject.status ?? "unknown")}>
-    {selectedProject.status ?? "Sin estado"}
-  </Badge>
-</p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        <Badge className={getStatusBadgeClass(selectedProject.status ?? "unknown")}>
+                          {selectedProject.status ?? "Sin estado"}
+                        </Badge>
+                      </p>
                   <p>
                     <strong>Owner:</strong> {selectedProject.owner}
                   </p>
