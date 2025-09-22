@@ -21,9 +21,17 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Logo → que vaya a /demo */}
           <div className="flex-shrink-0">
-            <Image src="/logo/lambda3d-logo.svg" alt="LAMBDA 3D" width={120} height={40} className="h-14 w-auto" />
+            <Link href="/demo" aria-label="Ir a Demo">
+              <Image
+                src="/logo/lambda3d-logo.svg"
+                alt="LAMBDA 3D"
+                width={120}
+                height={40}
+                className="h-14 w-auto"
+              />
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -51,7 +59,7 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* CTA Button (always goes to Visualizador) */}
+          {/* CTA Desktop → /demo */}
           <div className="hidden md:block">
             <Button asChild className="rounded-2xl px-6 py-3 font-medium">
               <Link href="/demo">Visualizador 3D</Link>
@@ -91,10 +99,21 @@ export function Navbar() {
                   </a>
                 )
               )}
+
+              {/* CTA Mobile principal → /demo */}
               <div className="pt-2">
                 <Button asChild className="w-full rounded-2xl">
+                  <Link href="/demo" onClick={() => setIsMenuOpen(false)}>
+                    Visualizador 3D
+                  </Link>
+                </Button>
+              </div>
+
+              {/* (Opcional) botón de login aparte */}
+              <div className="pt-2">
+                <Button asChild variant="outline" className="w-full rounded-2xl">
                   <Link href="/visualizador" onClick={() => setIsMenuOpen(false)}>
-                    Ver Visualizador
+                    Ingresar
                   </Link>
                 </Button>
               </div>
