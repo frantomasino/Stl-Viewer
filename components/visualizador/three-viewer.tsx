@@ -12,7 +12,9 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 // 👉 importa tu panel nuevo (no lo toco)
 import ControlsPanel, { ControlsState } from "@/components/visualizador/ControlsPanel";
 
-type ThreeViewerProps = { modelPath?: string };
+type ThreeViewerProps = { modelPath?: string; projectType?: string };
+// categorías que SÍ muestran el panel
+
 
 export type ThreeViewerHandle = {
   takeScreenshot: () => void;
@@ -28,7 +30,7 @@ type ExplodeItem = {
   direction: THREE.Vector3;
 };
 
-const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(({ modelPath }, ref) => {
+const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(({ modelPath,projectType }, ref) => {
   // montaje/render
   const outerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
@@ -38,6 +40,9 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(({ modelPath
   const controlsRef = useRef<OrbitControls | null>(null);
   const currentRootRef = useRef<THREE.Object3D | null>(null);
 
+  const HIDE_FOR = new Set(["maqueta anatómica"]); // en minúsculas
+  const type = (projectType || "").toLowerCase();
+  const showControls = HIDE_FOR.has(type);
   // extras / panel
   const gizmoRef = useRef<any>(null);
   const guiRef = useRef<GUI | null>(null);
@@ -886,7 +891,8 @@ const handleHome = () => {
     <div ref={outerRef} className="w-full h-full relative">
       <div ref={mountRef} className="absolute inset-0" />
       {/* Panel NUEVO (separado) */}
-      <ControlsPanel controls={controlsState} onControlsChange={applyControls} />
+      {!showControls &&(
+      <ControlsPanel controls={controlsState} onControlsChange={applyControls} />)}
     </div>
   );
 });

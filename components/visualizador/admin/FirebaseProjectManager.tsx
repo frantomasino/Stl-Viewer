@@ -31,13 +31,14 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, RefreshCw, ExternalLink } from "lucide-react";
-import {
+import {db,
   createProject,
   updateProject,
   deleteProject,
   getProjects,
   type FirebaseProject,
 } from "@/lib/firebase";
+import { collection, getDocs, query, where, writeBatch } from "firebase/firestore"
 
 export function FirebaseProjectManager() {
   const [projects, setProjects] = useState<FirebaseProject[]>([]);
@@ -135,24 +136,40 @@ const handleSubmit = async (e: React.FormEvent) => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (projectId: string) => {
-    if (!confirm("Are you sure you want to delete this project?")) return;
+const handleDelete = async (projectId: string) => {
+  if (!confirm("Are you sure you want to delete this project?")) return
 
-    try {
-      await deleteProject(projectId);
-      toast({
-        title: "Success",
-        description: "Project deleted successfully",
-      });
-      loadProjects();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete project",
-        variant: "destructive",
-      });
+  try {
+    // 1) Borrar memberships asociados al proyecto
+    const q = query(collection(db, "memberships"), where("projectId", "==", projectId))
+    const snap = await getDocs(q)
+
+    if (!snap.empty) {
+      // Firestore limita el batch a 500 ops; hacemos chunking por si acaso
+      const docs = snap.docs
+      for (let i = 0; i < docs.length; i += 500) {
+        const slice = docs.slice(i, i + 500)
+        const batch = writeBatch(db)
+        slice.forEach(d => batch.delete(d.ref))
+        await batch.commit()
+      }
     }
-  };
+
+    // 2) Borrar el proyecto
+    await deleteProject(projectId)
+
+    toast({ title: "Success", description: "Project and related memberships deleted successfully" })
+    loadProjects() // refrescá la lista
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to delete project (or memberships)",
+      variant: "destructive",
+    })
+    console.error(error)
+  }
+}
+
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -182,6 +199,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       case "pediatría":
         return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200";
       case "traumatología":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+      case "maqueta anatómica":
         return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
 
       default:
@@ -345,6 +364,9 @@ const handleSubmit = async (e: React.FormEvent) => {
                           <SelectItem value="Pediatría">Pediatría</SelectItem>
                           <SelectItem value="Traumatología">
                             Traumatología
+                          </SelectItem>
+                                                    <SelectItem value="Maqueta anatómica">
+                            Maqueta anatómica
                           </SelectItem>
                           <SelectItem value="Otro">Otro</SelectItem>
                         </SelectContent>

@@ -299,7 +299,7 @@ export default function AdminPanel() {
         </div>
         <div className="flex items-center gap-4">
           <HomeButton />
-          <RefreshWeb onRefresh={loadData} loading={loading}/>
+          {/* <RefreshWeb onRefresh={loadData} loading={loading}/> */}
           <ThemeToggle />
           <ImportExportACL onACLChange={handleACLChange} />
         </div>

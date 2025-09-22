@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,24 +9,39 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Search, Eye } from "lucide-react"
 import type { ACL } from "@/lib/acl"
 import type { User, Project } from "./UsersTable"
-
+import {FirebaseProjectManager} from "./FirebaseProjectManager"
 interface ProjectsTableProps {
   projects: Project[]
   users: User[]
   acl: ACL
 }
+import { getProjects } from "@/lib/firebase"
 
 export function ProjectsTable({ projects, users, acl }: ProjectsTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
-  const filteredProjects = projects.filter(
+  const [projRefreshing, setProjRefreshing] = useState(false)
+  const [projList, setProjList] = useState<Project[]>(projects)
+  const filteredProjects = projList.filter(
     (project) =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.status?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
+// Si cambian los props desde arriba, sincronizo
+useEffect(() => { setProjList(projects) }, [projects])
+
+const loadProjects = async () => {
+  setProjRefreshing(true)
+  try {
+    const fresh = await getProjects()
+    setProjList(fresh)
+  } finally {
+    setProjRefreshing(false)
+  }
+}
   const getProjectViewers = (projectId: string): User[] => {
     const viewerIds: string[] = []
 
@@ -77,6 +92,21 @@ const formatDate = (created: any) => {
   const date = new Date(created)
   return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR")
 }
+useEffect(() => {
+  loadProjects() // primera carga al montar la solapa
+}, [])
+
+useEffect(() => {
+  const onFocus = () => loadProjects()
+  const onVisible = () => { if (document.visibilityState === "visible") loadProjects() }
+
+  window.addEventListener("focus", onFocus)
+  document.addEventListener("visibilitychange", onVisible)
+  return () => {
+    window.removeEventListener("focus", onFocus)
+    document.removeEventListener("visibilitychange", onVisible)
+  }
+}, [])
 
   return (
     <>
@@ -145,14 +175,14 @@ const formatDate = (created: any) => {
                 <div className="text-sm text-muted-foreground space-y-1">
                   <p>
                     <strong>Description:</strong> {selectedProject.description}
-                  </p>
+                  
                       <p>
                         <strong>Status:</strong>{" "}
                         <Badge className={getStatusBadgeClass(selectedProject.status ?? "unknown")}>
                           {selectedProject.status ?? "Sin estado"}
                         </Badge>
                       </p>
-                  <p>
+                
                     <strong>Owner:</strong> {selectedProject.owner}
                   </p>
                   <p>

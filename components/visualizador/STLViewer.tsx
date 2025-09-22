@@ -38,7 +38,8 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
   // Control del visor (Home / Screenshot / Grabar)
   const viewerRef = useRef<ThreeViewerHandle>(null);
 
-  const selectedPath = projects.find((p) => p.name === selectedModel)?.path;
+const selectedProject = projects.find((p) => p.name === selectedModel);
+const selectedPath = selectedProject?.path; // si querés mantenerlo
 
 useEffect(() => {
   let mounted = true;
@@ -148,7 +149,7 @@ useEffect(() => {
               title="Reencuadrar el modelo"
             >
               <Home className="w-4 h-4 mr-2" />
-              Home
+              Vista Anterior
             </Button>
 
             {/* Screenshot */}
@@ -188,6 +189,7 @@ useEffect(() => {
                 <ThreeViewer
                   ref={viewerRef}
                   modelPath={encodeURI(selectedPath)}
+                  projectType={selectedProject.type} 
                 />
                 
               </>

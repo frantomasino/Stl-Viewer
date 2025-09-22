@@ -289,7 +289,7 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     <div className="p-3 text-xs space-y-3">
       {/* Target Mesh */}
       <div>
-        <div className="text-gray-400 mb-1">Target Mesh</div>
+        <div className="text-gray-400 mb-1">Modelo</div>
         <select
           className="w-full h-7 bg-gray-700 border border-gray-600 rounded px-2"
           value={String(controls.selectedMesh)}
@@ -316,7 +316,7 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
             onControlsChange({ clipSelectedOnly: e.target.checked })
           }
         />
-        <span className="text-gray-400">Clip Only Target</span>
+        <span className="text-gray-400">Cortar selección</span>
       </label>
 
       {/* Color */}
@@ -340,7 +340,7 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
       {/* Opacity */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-gray-400">Opacity</span>
+          <span className="text-gray-400">Opacidad</span>
           <span className="text-gray-500">{controls.opacity.toFixed(2)}</span>
         </div>
         <input
@@ -359,7 +359,7 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
       {/* Explode */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-gray-400">Explode</span>
+          <span className="text-gray-400">Explotar</span>
           <span className="text-gray-500">{controls.explode.toFixed(2)}</span>
         </div>
         <input

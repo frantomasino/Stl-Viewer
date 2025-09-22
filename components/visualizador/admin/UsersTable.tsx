@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,10 @@ import { Search, Eye } from "lucide-react"
 import { UserRoleBadge } from "./UserRoleSelector"
 import type { UserRole } from "@/lib/firebase"
 import type { ACL } from "@/lib/acl"
+
+
+import { db } from "@/lib/firebase"
+import { collection, getDocs } from "firebase/firestore"
 
 export interface User {
   id: string
@@ -42,8 +46,10 @@ interface UsersTableProps {
 export function UsersTable({ users, projects, acl }: UsersTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+const [userList, setUserList] = useState<User[]>(users) // seguirás renderizando tu misma tabla, pero con userList
+const [refreshing, setRefreshing] = useState(false)
 
-  const filteredUsers = users.filter(
+  const filteredUsers = userList.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,7 +65,16 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
     return projects.filter((project) => userProjectIds.includes(project.id))
   }
 
-
+const loadUsers = async () => {
+  setRefreshing(true)
+  try {
+    const snap = await getDocs(collection(db, "users"))
+    const list: User[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as User[]
+    setUserList(list)
+  } finally {
+    setRefreshing(false)
+  }
+}
 
   const formatDate = (created: any) => {
     if (!created) return "";
@@ -71,7 +86,18 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
     const date = new Date(created);
     return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
   };
+useEffect(() => { loadUsers() }, [])
 
+useEffect(() => {
+  const onFocus = () => loadUsers()
+  const onVisible = () => { if (document.visibilityState === "visible") loadUsers() }
+  window.addEventListener("focus", onFocus)
+  document.addEventListener("visibilitychange", onVisible)
+  return () => {
+    window.removeEventListener("focus", onFocus)
+    document.removeEventListener("visibilitychange", onVisible)
+  }
+}, [])
   return (
     <>
       <div className="space-y-4">
@@ -180,7 +206,7 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
                     getUserProjects(selectedUser.id).map((project) => (
                       <div key={project.id} className="p-3 border rounded-lg">
                         <div className="font-medium text-sm">{project.name}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="text-xs text-muted-foreground mt-1 ">
                           {project.description && <div className="mb-1">{project.description}</div>}
                           {project.status && <div className="mr-3">Status: {project.status}</div>}
                           {project.owner && <div className="mr-3">Owner: {project.owner}</div>}
@@ -188,7 +214,7 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
                           {project.type && <div className="mr-3">Type: {project.type}</div>}
                           {project.date && <div>Date: {project.date}</div>}
                         </div>
-                        {project.path && <div className="text-xs text-muted-foreground mt-1">Path: {project.path}</div>}
+                        {project.path && <div className="text-xs text-muted-foreground mt-1 break-words">Path: {project.path}</div>}
                       </div>
                     ))
                   )}
