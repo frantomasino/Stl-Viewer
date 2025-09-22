@@ -36,6 +36,16 @@ interface AppSidebarProps {
   handleLogout?: () => void;
 }
 
+
+  const formatDate = (created: any) => {
+    if (!created) return ""
+    if (typeof created === "object" && typeof created.toDate === "function") {
+      return created.toDate().toLocaleDateString("es-AR")
+    }
+    const date = new Date(created)
+    return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR")
+  }
+
 /** Acordeón con animación de altura */
 function AccordionSection({
   title,
@@ -162,7 +172,7 @@ export function AppSidebar({
                       {p.name}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {p.type} • {p.date}
+                      {p.type} • {formatDate(p.date)}
                     </div>
                   </Card>
                 ))}
