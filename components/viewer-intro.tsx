@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight,ArrowLeft, Play } from "lucide-react";
+import { ArrowRight, ArrowLeft, Play } from "lucide-react";
 
 export function ViewerIntro() {
   return (
     <section className="py-24 lg:py-32 bg-gradient-to-b from-background to-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    {/* Botón regresar arriba a la izquierda */}
+        {/* Botón regresar arriba a la izquierda */}
         <div className="mb-8">
           <Button
             variant="outline"
@@ -19,9 +19,6 @@ export function ViewerIntro() {
             </Link>
           </Button>
         </div>
-
-
-
 
         <div className="text-center space-y-8 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-balance">
@@ -59,16 +56,16 @@ export function ViewerIntro() {
             </Button>
           </div>
 
-<div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg">
-  <iframe
-    className="w-full h-full"
-    src="/vid/vid1.mp4"
-    title="Video demo"
-    frameBorder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allowFullScreen
-  ></iframe>
-</div>
+          <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg">
+            <iframe
+              className="w-full h-full"
+              src="/vid/vid1.mp4"
+              title="Video demo"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
         </div>
       </div>
     </section>

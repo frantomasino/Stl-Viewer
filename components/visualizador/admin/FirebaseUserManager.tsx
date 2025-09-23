@@ -120,7 +120,7 @@ export function FirebaseUserManager() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between ">
           <div>
             <CardTitle>Firebase User Management</CardTitle>
             <CardDescription>Manage users stored in Firebase Firestore</CardDescription>
@@ -142,7 +142,7 @@ export function FirebaseUserManager() {
                   Add User
                 </Button> */}
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent >
                 <DialogHeader>
                   <DialogTitle>{editingUser ? "Edit User" : "Add New User"}</DialogTitle>
                   <DialogDescription>
@@ -202,11 +202,14 @@ export function FirebaseUserManager() {
                   </DialogFooter>
                 </form>
               </DialogContent>
+              
             </Dialog>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"> 
+
+      <CardContent >
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -251,6 +254,7 @@ export function FirebaseUserManager() {
           </div>
         )}
       </CardContent>
+      </div>
     </Card>
   )
 }

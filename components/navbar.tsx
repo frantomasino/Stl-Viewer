@@ -23,7 +23,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo → que vaya a /demo */}
           <div className="flex-shrink-0">
-            <Link href="/demo" aria-label="Ir a Demo">
+            <Link href="/" aria-label="">
               <Image
                 src="/logo/lambda3d-logo.svg"
                 alt="LAMBDA 3D"
@@ -110,13 +110,7 @@ export function Navbar() {
               </div>
 
               {/* (Opcional) botón de login aparte */}
-              <div className="pt-2">
-                <Button asChild variant="outline" className="w-full rounded-2xl">
-                  <Link href="/visualizador" onClick={() => setIsMenuOpen(false)}>
-                    Ingresar
-                  </Link>
-                </Button>
-              </div>
+
             </div>
           </div>
         )}

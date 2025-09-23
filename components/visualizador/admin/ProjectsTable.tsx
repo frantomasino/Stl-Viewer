@@ -121,7 +121,7 @@ useEffect(() => {
           />
         </div>
 
-        <div className="border rounded-lg">
+        <div className="border rounded-lgspace-y-2 max-h-[60vh] overflow-y-auto pr-1">
           <Table>
             <TableHeader>
               <TableRow>
@@ -169,10 +169,10 @@ useEffect(() => {
           </SheetHeader>
 
           {selectedProject && (
-            <div className="mt-6 space-y-6">
+            <div className="mt-6 space-y-6 ">
               <div className="space-y-2">
                 <h4 className="font-medium">Project Information</h4>
-                <div className="text-sm text-muted-foreground space-y-1">
+                <div className="text-sm text-muted-foreground space-y-1 ">
                   <p>
                     <strong>Description:</strong> {selectedProject.description}
                   

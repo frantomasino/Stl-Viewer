@@ -253,7 +253,7 @@ const handleDelete = async (projectId: string) => {
                   Add Project
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl ">
                 <DialogHeader>
                   <DialogTitle>
                     {editingProject ? "Edit Project" : "Add New Project"}
@@ -384,6 +384,8 @@ const handleDelete = async (projectId: string) => {
           </div>
         </div>
       </CardHeader>
+      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"> 
+      
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-8">
@@ -459,6 +461,7 @@ const handleDelete = async (projectId: string) => {
           </div>
         )}
       </CardContent>
+      </div>
     </Card>
   );
 }

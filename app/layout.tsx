@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import ClientLayout from "./ClientLayout"
+import { ScrollToTopButton } from "@/components/ScrollToTopButton"
 
 export const metadata: Metadata = {
   title: "LAMBDA 3D - Innovación 3D para la salud y la educación",
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="es">
       <body>
         <ClientLayout>{children}</ClientLayout>
+        <ScrollToTopButton />
       </body>
     </html>
   )
