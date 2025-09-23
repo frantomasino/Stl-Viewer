@@ -42,7 +42,7 @@ export function ViewerIntro() {
               <Play className="h-5 w-5 mr-2" />
               Ver Demo
             </Button>
-            {/* Ajuste en botón primario
+            {/* Ajuste en botón primario */}
             <Button
               size="lg"
               asChild
@@ -56,7 +56,7 @@ export function ViewerIntro() {
                 Ingresa a tu cuenta
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Link>
-            </Button> */}
+            </Button>
           </div>
 
 <div className="aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg">
