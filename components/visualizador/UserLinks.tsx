@@ -26,6 +26,17 @@ export function DemoButton() {
   );
 }
 
+export function HomeButton() {
+  return (
+    <Button asChild variant="outline" size="sm">
+      <Link href="/visualizador">
+        <Home className="h-[1.2rem] w-[1.2rem]" />
+        <span className="sr-only">Ir al inicio</span>
+      </Link>
+    </Button>
+  );
+}
+
 // 👇 Botón aparte para login real
 export function LoginButton() {
   return (

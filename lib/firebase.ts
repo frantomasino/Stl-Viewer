@@ -289,7 +289,7 @@ export const ensureUserDoc = async (): Promise<void> => {
         uid: u.uid,
         name: u.displayName ?? "",
         email: u.email ?? "",
-        role: "USER",          // ← default inicial, NO se reescribe luego
+        role: "TRIAL",          // ← default inicial, NO se reescribe luego
         department: "",
         status: "active",
         createdAt: serverTimestamp(),
@@ -503,3 +503,31 @@ export const getContactMessages = async (max: number = 50): Promise<ContactMessa
   const snap = await getDocs(qy);
   return snap.docs.map(d => ({ id: d.id, ...(d.data() as ContactMessage) }));
 };
+
+
+// ✅ Helpers simples para obtener proyectos por usuario (vía colecciones)
+
+// Devuelve los IDs de proyectos del usuario (ya la tenés arriba, la reutilizo)
+// export async function getUserProjectIds(userId: string): Promise<string[]> { ... }
+
+// Devuelve los proyectos (FirebaseProject[]) a partir de una lista de IDs (ya la tenés)
+// export async function getProjectsByIds(ids: string[]): Promise<FirebaseProject[]> { ... }
+
+// --- NUEVO: proyectos del usuario por colecciones ---
+export async function getUserProjects(userId: string): Promise<FirebaseProject[]> {
+  const ids = await getUserProjectIds(userId);
+  return await getProjectsByIds(ids);
+}
+
+// --- NUEVO: proyectos del usuario logueado ---
+export async function getMyProjects(): Promise<FirebaseProject[]> {
+  const u = auth.currentUser;
+  if (!u) return [];
+  return await getUserProjects(u.uid);
+}
+
+// --- NUEVO: sólo el conteo ---
+export async function getUserProjectsCount(userId: string): Promise<number> {
+  const ids = await getUserProjectIds(userId);
+  return ids.length;
+}
