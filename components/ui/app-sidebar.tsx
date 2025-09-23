@@ -7,6 +7,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
+import { BrandLogo } from "@/components/visualizador/brandLogo";
 
 import {
   AlertDialog,
@@ -125,11 +126,7 @@ export function AppSidebar({
   <div className="flex items-center gap-3">
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <img
-          src="/logo.png"
-          alt="Lambda 3D"
-          style={{ width: "auto", height: "150px", cursor: "pointer" }}
-        />
+<BrandLogo />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

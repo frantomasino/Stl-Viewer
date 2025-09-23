@@ -119,7 +119,7 @@ useEffect(() => {
             )}
 
             {/* Grabar / Detener (se pinta rojo al grabar) */}
-            <Button
+            {/* <Button
               variant="outline"
               size="sm"
               onClick={handleRecord}
@@ -139,7 +139,7 @@ useEffect(() => {
                   <Circle className="w-4 h-4 mr-2" /> Grabar
                 </>
               )}
-            </Button>
+            </Button> */}
 
             {/* Home */}
             <Button
