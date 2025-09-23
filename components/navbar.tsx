@@ -15,6 +15,8 @@ export function Navbar() {
     { name: "Casos", href: "#casos", external: false },
     { name: "Nosotros", href: "#nosotros", external: false },
     { name: "Contacto", href: "#contacto", external: false },
+        { name: "Contacto", href: "#contacto", external: false },
+
   ]
 
   return (
