@@ -194,12 +194,13 @@ useEffect(() => {
                 
               </>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-black text-lg font-semibold opacity-80">
-                  ⚠️ SELECCIONE UN PROYECTO PARA CONTINUAR
-                </p>
-              </div>
-            )}
+               <div className="absolute inset-0 flex items-center justify-center">
+                   <p className="text-foreground/80 text-lg font-semibold transition-colors text-center md:text-left max-w-[90%]">
+                    ⚠️ SELECCIONE UN PROYECTO PARA CONTINUAR
+                   </p>
+                </div>
+              
+              )}
           </div>
         </div>
       </SidebarInset>
