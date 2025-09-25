@@ -122,12 +122,16 @@ export function AppSidebar({
       <SidebarContent>
         {/* Logo */}
 {/* Logo */}
+{/* Logo */}
 <div className="p-6 border-b border-gray-200">
   <div className="flex items-center gap-3">
     <AlertDialog>
       <AlertDialogTrigger asChild>
-<BrandLogo />
+        <button type="button" className="p-0 bg-transparent border-0">
+          <BrandLogo />
+        </button>
       </AlertDialogTrigger>
+
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>¿Querés salir?</AlertDialogTitle>

@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@/components/ui/button"; // ← AGREGADO
+import { Button } from "@/components/ui/button";
 
 export type Limits = { min: number; max: number };
 
@@ -14,14 +14,12 @@ export type ControlsState = {
   opacity: number;
   explode: number;
 
-  // ventanas (coord del modelo)
   windowX: [number, number];
   windowY: [number, number];
   windowZ: [number, number];
 
   limits: { x: Limits; y: Limits; z: Limits };
 
-  // opcional: helpers por eje (si ya los usás)
   showHelperR?: boolean;
   showHelperA?: boolean;
   showHelperS?: boolean;
@@ -36,13 +34,14 @@ function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
 }
 
+/* ===================== DualRange (pointer-ready SIN tocar estilos) ===================== */
 function DualRange({
   title,
   value,
   limits,
   onChange,
   swapKnobs = false,
-  accent, // 'R' | 'A' | 'S'
+  accent,
 }: {
   title: string;
   value: [number, number];
@@ -81,15 +80,8 @@ function DualRange({
     return clamp(q, limits.min, limits.max);
   };
 
-  const start = (which: "min" | "max") => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragging.current = which;
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", end);
-  };
-
-  const move = (e: MouseEvent) => {
+  const move = (e: PointerEvent) => {
+    e.preventDefault(); // evita scroll al arrastrar en mobile
     const v = stepSnap(clientXToValue(e.clientX));
     if (dragging.current === "min") onChange([Math.min(v, maxV), maxV]);
     else if (dragging.current === "max") onChange([minV, Math.max(v, minV)]);
@@ -97,17 +89,37 @@ function DualRange({
 
   const end = () => {
     dragging.current = null;
-    window.removeEventListener("mousemove", move);
-    window.removeEventListener("mouseup", end);
+    window.removeEventListener("pointermove", move as any);
+    window.removeEventListener("pointerup", end);
+    window.removeEventListener("pointercancel", end);
   };
 
-  const onTrackClick = (e: React.MouseEvent) => {
+  const start =
+    (which: "min" | "max") =>
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragging.current = which;
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+      window.addEventListener("pointermove", move as any, { passive: false });
+      window.addEventListener("pointerup", end);
+      window.addEventListener("pointercancel", end);
+    };
+
+  const onTrackPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
     const v = stepSnap(clientXToValue(e.clientX));
     const dMin = Math.abs(v - minV);
     const dMax = Math.abs(v - maxV);
-    if (dMin <= dMax) onChange([Math.min(v, maxV), maxV]);
+    dragging.current = dMin <= dMax ? "min" : "max";
+    window.addEventListener("pointermove", move as any, { passive: false });
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    if (dragging.current === "min") onChange([Math.min(v, maxV), maxV]);
     else onChange([minV, Math.max(v, minV)]);
   };
+
+  React.useEffect(() => () => end(), []);
 
   const accentMap: Record<"R" | "A" | "S", string> = {
     R: "#ff3654b3",
@@ -131,10 +143,11 @@ function DualRange({
         </div>
       </div>
 
+      {/* MISMO MARKUP/CLASES – solo handlers + touch-none */}
       <div
         ref={trackRef}
-        className="relative h-6 select-none"
-        onMouseDown={onTrackClick}
+        className="relative h-6 select-none touch-none"
+        onPointerDown={onTrackPointerDown}
       >
         <div className="absolute inset-y-2 left-0 right-0 rounded bg-gray-600" />
         <div
@@ -147,16 +160,15 @@ function DualRange({
           }}
         />
         <div
-          className="absolute top-1 w-4 h-4 rounded-full bg-white border border-[2px] cursor-pointer z-10"
+          className="absolute top-1 w-4 h-4 rounded-full bg-white border border-[2px] cursor-pointer z-10 touch-none"
           style={{ left: `calc(${pMin}% - 8px)`, ...knobStyle }}
-          onMouseDown={start("min")}
+          onPointerDown={start("min")}
         />
         <div
-          className="absolute top-1 w-4 h-4 rounded-full bg-white border border-[2px] cursor-pointer z-10"
+          className="absolute top-1 w-4 h-4 rounded-full bg-white border border-[2px] cursor-pointer z-10 touch-none"
           style={{ left: `calc(${pMax}% - 8px)`, ...knobStyle }}
-          onMouseDown={start("max")}
+          onPointerDown={start("max")}
         />
-        {/* Etiquetas de extremos según RAS */}
         <div className="absolute -top-3 left-0 text-[10px] text-gray-400">
           {title === "R" ? "" : title === "A" ? "" : ""}
         </div>
@@ -167,13 +179,12 @@ function DualRange({
     </div>
   );
 }
+/* ====================================================================================== */
 
 export default function ControlsPanel({ controls, onControlsChange }: Props) {
-  // estado de visibilidad/colapso/anclado (persistente)
   const [open, setOpen] = React.useState(true);
   const [collapsed, setCollapsed] = React.useState(true);
   const [pinned, setPinned] = React.useState(true);
-  // guarda el estado de colapso “flotante” para restaurarlo al despinnear
   const prevCollapsedRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -184,28 +195,13 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     if (c != null) setCollapsed(c === "1");
     if (p != null) setPinned(p === "1");
   }, []);
-  React.useEffect(
-    () => localStorage.setItem("controlsOpen", open ? "1" : "0"),
-    [open]
-  );
-  React.useEffect(
-    () => localStorage.setItem("controlsCollapsed", collapsed ? "1" : "0"),
-    [collapsed]
-  );
-  React.useEffect(
-    () => localStorage.setItem("controlsPinned", pinned ? "1" : "0"),
-    [pinned]
-  );
+  React.useEffect(() => localStorage.setItem("controlsOpen", open ? "1" : "0"), [open]);
+  React.useEffect(() => localStorage.setItem("controlsCollapsed", collapsed ? "1" : "0"), [collapsed]);
+  React.useEffect(() => localStorage.setItem("controlsPinned", pinned ? "1" : "0"), [pinned]);
 
-  // hotkey C para mostrar/ocultar
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (
-        e.key.toLowerCase() === "c" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey
-      ) {
+      if (e.key.toLowerCase() === "c" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         setOpen((v) => !v);
       }
     };
@@ -213,18 +209,17 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // draggable (sólo cuando no está anclado)
   const [pos, setPos] = React.useState(() => ({
     x: typeof window !== "undefined" ? window.innerWidth - 320 : 0,
     y: 20,
   }));
-  const [drag, setDrag] = React.useState<{
-    on: boolean;
-    dx: number;
-    dy: number;
-  }>({ on: false, dx: 0, dy: 0 });
+  const [drag, setDrag] = React.useState<{ on: boolean; dx: number; dy: number }>({
+    on: false,
+    dx: 0,
+    dy: 0,
+  });
 
-  // ====== NUEVO: calcular pos a la IZQ del render sin esperar a un frame ======
+  // cálculo de posición “snap” a la izquierda del viewer
   const calcSnapLeftPos = React.useCallback(() => {
     const anchor =
       document.getElementById("viewer-root") ||
@@ -234,44 +229,46 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
 
     if (anchor) {
       const r = anchor.getBoundingClientRect();
-      return {
-        x: Math.max(8, r.left + 8),   // pegado a la izq del viewer
-        y: Math.max(56, r.top + 56),  // debajo del navbar
-      };
+      return { x: Math.max(8, r.left + 8), y: Math.max(56, r.top + 56) };
     }
     return { x: 16, y: 56 };
   }, []);
-  // ===========================================================================
 
-  const onHeaderDown = (e: React.MouseEvent) => {
-    if (pinned) return; // no drag cuando está anclado
+  /* ============ DRAG DEL HEADER con Pointer Events (móvil + desktop) ============ */
+  const onHeaderPointerDown = (e: React.PointerEvent) => {
+    if (pinned) return; // si está anclado, no se arrastra
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     setDrag({ on: true, dx: e.clientX - pos.x, dy: e.clientY - pos.y });
   };
 
   React.useEffect(() => {
-    const mm = (e: MouseEvent) => {
+    const mm = (e: PointerEvent) => {
       if (!drag.on) return;
-      const maxX =
-        (typeof window !== "undefined" ? window.innerWidth : 1200) - 320;
-      const maxY =
-        (typeof window !== "undefined" ? window.innerHeight : 800) - 100;
+      e.preventDefault(); // evita scroll mientras se arrastra en mobile
+      const maxX = (typeof window !== "undefined" ? window.innerWidth : 1200) - 320;
+      const maxY = (typeof window !== "undefined" ? window.innerHeight : 800) - 100;
       setPos({
         x: Math.max(0, Math.min(e.clientX - drag.dx, maxX)),
         y: Math.max(0, Math.min(e.clientY - drag.dy, maxY)),
       });
     };
     const mu = () => setDrag((d) => ({ ...d, on: false }));
+
     if (drag.on) {
-      document.addEventListener("mousemove", mm);
-      document.addEventListener("mouseup", mu);
+      window.addEventListener("pointermove", mm as any, { passive: false });
+      window.addEventListener("pointerup", mu);
+      window.addEventListener("pointercancel", mu);
     }
     return () => {
-      document.removeEventListener("mousemove", mm);
-      document.removeEventListener("mouseup", mu);
+      window.removeEventListener("pointermove", mm as any);
+      window.removeEventListener("pointerup", mu);
+      window.removeEventListener("pointercancel", mu);
     };
-  }, [drag, pos.x, pos.y]);
+  }, [drag.on, drag.dx, drag.dy]);
+  /* ============================================================================ */
 
-  // si está cerrado y no anclado, mostramos un FAB para reabrir
   if (!open && !pinned) {
     return (
       <button
@@ -284,10 +281,8 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     );
   }
 
-  // panel completo (contenido)
   const body = (
     <div className="p-3 text-xs space-y-3">
-      {/* Target Mesh */}
       <div>
         <div className="text-gray-400 mb-1">Modelo</div>
         <select
@@ -307,7 +302,6 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
         </select>
       </div>
 
-      {/* Clip Only Target */}
       <label className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -319,7 +313,6 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
         <span className="text-gray-400">Cortar selección</span>
       </label>
 
-      {/* Color */}
       <div>
         <div className="text-gray-400 mb-1">Color</div>
         <div className="flex items-center gap-2">
@@ -337,7 +330,6 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
         </div>
       </div>
 
-      {/* Opacity */}
       <div>
         <div className="flex items-center justify-between mb-1">
           <span className="text-gray-400">Opacidad</span>
@@ -356,10 +348,9 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
         />
       </div>
 
-      {/* Explode */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-gray-400">Explotar</span>
+          <span className="text-gray-400">Explode</span>
           <span className="text-gray-500">{controls.explode.toFixed(2)}</span>
         </div>
         <input
@@ -375,7 +366,7 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
         />
       </div>
 
-      {/* Rangos dobles (RAS) */}
+      {/* RAS */}
       <DualRange
         title="R"
         value={controls.windowX}
@@ -402,13 +393,12 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     </div>
   );
 
-  // panel “chrome” (header + body opcional)
   const panelChrome = (
     <div
       className="w-80 bg-gray-800 text-white overflow-y-auto border border-gray-600 rounded-lg shadow-2xl "
       style={
         pinned
-          ? { position: "relative", maxHeight: "calc(100vh - 40px)" } // dentro del navbar dock
+          ? { position: "relative", maxHeight: "calc(100vh - 40px)" }
           : {
               position: "fixed",
               left: pos.x,
@@ -422,7 +412,8 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
         className={`flex items-center justify-between p-3 ${
           pinned ? "cursor-default" : "cursor-move"
         } bg-gray-700 rounded-t-lg border-b border-gray-600`}
-        onMouseDown={onHeaderDown}
+        onPointerDown={onHeaderPointerDown}             /* ← antes onMouseDown */
+        style={{ touchAction: "none" }}                 /* evita que el scroll robe el gesto */
       >
         <span className="text-sm text-gray-200">Controles</span>
         <div className="flex items-center gap-2 text-xs">
@@ -432,15 +423,13 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
               e.stopPropagation();
 
               if (pinned && collapsed) {
-                // Estaba pineado y colapsado → “maximizar” = despinnear y volver a flotante
-                setPos(calcSnapLeftPos());    // ← fijar pos ANTES
+                setPos(calcSnapLeftPos());
                 setPinned(false);
-                setCollapsed(false); // volvé expandido
+                setCollapsed(false);
                 setOpen(true);
                 return;
               }
 
-              // Caso normal: toggle de colapso
               setCollapsed((v) => !v);
             }}
             className="px-2 py-1 rounded bg-gray-600 hover:bg-gray-500"
@@ -454,14 +443,12 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
               setPinned((wasPinned) => {
                 const nowPinned = !wasPinned;
                 if (nowPinned) {
-                  // me voy al navbar → colapso
-                  prevCollapsedRef.current = collapsed; // (si querés recuperar luego)
+                  prevCollapsedRef.current = collapsed;
                   setCollapsed(true);
                 } else {
-                  // vuelvo a flotante → fijar pos ANTES para evitar salto
                   setPos(calcSnapLeftPos());
-                  setOpen(true);       // aseguro que se vea el header flotante
-                  setCollapsed(true);  // lo dejás minimizado (si querés expandido poné false)
+                  setOpen(true);
+                  setCollapsed(true);
                 }
                 return nowPinned;
               });
@@ -477,14 +464,12 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     </div>
   );
 
-  // botón compacto para navbar cuando está pineado + colapsado
   const pinnedChip = (
     <Button
       variant="outline"
       size="sm"
       onClick={() => {
-        // salir del navbar y volver flotante expandido SIN salto
-        setPos(calcSnapLeftPos());  // ← fijar pos ANTES
+        setPos(calcSnapLeftPos());
         setPinned(false);
         setCollapsed(false);
         setOpen(true);
@@ -496,7 +481,6 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     </Button>
   );
 
-  // si está “pinned”, lo renderizamos en el contenedor del navbar (si existe)
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
   const dockEl = mounted ? document.getElementById("controls-dock") : null;

@@ -23,12 +23,27 @@ export function ProjectsTable({ projects, users, acl }: ProjectsTableProps) {
 
   const [projRefreshing, setProjRefreshing] = useState(false)
   const [projList, setProjList] = useState<Project[]>(projects)
+
+const [sortBy, setSortBy] = useState<"name" | "created">("name")
+const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+
   const filteredProjects = projList.filter(
     (project) =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.status?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+  if (sortBy === "name") {
+    return sortOrder === "asc"
+      ? a.name.localeCompare(b.name)
+      : b.name.localeCompare(a.name)
+  } else {
+    const dateA = a.created
+    const dateB = b.created
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA
+  }
+})
 
 // Si cambian los props desde arriba, sincronizo
 useEffect(() => { setProjList(projects) }, [projects])
@@ -108,116 +123,139 @@ useEffect(() => {
   }
 }, [])
 
-  return (
-    <>
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search projects by name, description, or status..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        <div className="border rounded-lgspace-y-2 max-h-[60vh] overflow-y-auto pr-1">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    {searchTerm ? "No projects found matching your search." : "No projects available."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>
-                        <Badge className={getStatusBadgeClass(project.status ?? "unknown")}>{project.status ?? "Sin estado"}</Badge>
-                    </TableCell>
-                    <TableCell>{project.owner}</TableCell>
-                    <TableCell>{formatDate(project.created)}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedProject(project)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+return (
+  <>
+    <div className="space-y-4">
+      {/* Buscador */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search projects by name, description, or status..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-      <Sheet open={!!selectedProject} onOpenChange={() => setSelectedProject(null)}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>{selectedProject?.name}</SheetTitle>
-            <SheetDescription>Project details and viewer access</SheetDescription>
-          </SheetHeader>
+      {/* Controles de orden (nuevo, minimal) */}
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-sm text-muted-foreground">Ordenar por:</span>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as "name" | "created")}
+          className="border rounded px-2 py-1 text-sm bg-background"
+        >
+          <option value="name">Nombre (A-Z)</option>
+          <option value="created">Fecha de creación</option>
+        </select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+          className="px-2"
+          title={sortOrder === "asc" ? "Ascendente" : "Descendente"}
+        >
+          {sortOrder === "asc" ? "↑" : "↓"}
+        </Button>
+      </div>
 
-          {selectedProject && (
-            <div className="mt-6 space-y-6 ">
-              <div className="space-y-2">
-                <h4 className="font-medium">Project Information</h4>
-                <div className="text-sm text-muted-foreground space-y-1 ">
-                  <p>
-                    <strong>Description:</strong> {selectedProject.description}
-                  
-                      <p>
-                        <strong>Status:</strong>{" "}
-                        <Badge className={getStatusBadgeClass(selectedProject.status ?? "unknown")}>
-                          {selectedProject.status ?? "Sin estado"}
-                        </Badge>
-                      </p>
-                
-                    <strong>Owner:</strong> {selectedProject.owner}
-                  </p>
-                  <p>
-                    <strong>Created:</strong> {formatDate(selectedProject.created)}
-                  </p>
-                  <p>
-                    <strong>ID:</strong> {selectedProject.id}
-                  </p>
-                </div>
-              </div>
+      <div className="border rounded-lgspace-y-2 max-h-[60vh] overflow-y-auto pr-1">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedProjects.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  {searchTerm ? "No projects found matching your search." : "No projects available."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedProjects.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell className="font-medium">{project.name}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusBadgeClass(project.status ?? "unknown")}>
+                      {project.status ?? "Sin estado"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{project.owner}</TableCell>
+                  <TableCell>{formatDate(project.created)}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedProject(project)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
 
-              <div className="space-y-2">
-                <h4 className="font-medium">Viewers ({getProjectViewers(selectedProject.id).length})</h4>
-                <div className="space-y-2">
-                  {getProjectViewers(selectedProject.id).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No users have access to this project</p>
-                  ) : (
-                    getProjectViewers(selectedProject.id).map((user) => (
-                      <div key={user.id} className="p-3 border rounded-lg">
-                        <div className="font-medium text-sm">{user.name}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          <span className="mr-3">{user.email}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {user.role}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+    <Sheet open={!!selectedProject} onOpenChange={() => setSelectedProject(null)}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>{selectedProject?.name}</SheetTitle>
+          <SheetDescription>Project details and viewer access</SheetDescription>
+        </SheetHeader>
+
+        {selectedProject && (
+          <div className="mt-6 space-y-6 ">
+            <div className="space-y-2">
+              <h4 className="font-medium">Project Information</h4>
+              <div className="text-sm text-muted-foreground space-y-1 ">
+                <p>
+                  <strong>Description:</strong> {selectedProject.description}
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    <Badge className={getStatusBadgeClass(selectedProject.status ?? "unknown")}>
+                      {selectedProject.status ?? "Sin estado"}
+                    </Badge>
+                  </p>
+                  <strong>Owner:</strong> {selectedProject.owner}
+                </p>
+                <p>
+                  <strong>Created:</strong> {formatDate(selectedProject.created)}
+                </p>
+                <p>
+                  <strong>ID:</strong> {selectedProject.id}
+                </p>
               </div>
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
-    </>
-  )
+
+            <div className="space-y-2">
+              <h4 className="font-medium">Viewers ({getProjectViewers(selectedProject.id).length})</h4>
+              <div className="space-y-2">
+                {getProjectViewers(selectedProject.id).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No users have access to this project</p>
+                ) : (
+                  getProjectViewers(selectedProject.id).map((user) => (
+                    <div key={user.id} className="p-3 border rounded-lg">
+                      <div className="font-medium text-sm">{user.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        <span className="mr-3">{user.email}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {user.role}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  </>
+);
 }
