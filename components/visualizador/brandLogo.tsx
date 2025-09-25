@@ -7,7 +7,7 @@ export function BrandLogo() {
   const { resolvedTheme } = useTheme();
   const src =
     resolvedTheme === "dark"
-      ? "/logo/lambda3d-logo-light.png"
+      ? "/logo/lambda3d -logo-light.png"
       : "/logo/logo.png"; // 👈 renombrá el archivo para evitar espacios
 
   return (
