@@ -69,7 +69,7 @@ useEffect(() => {
   });
   return () => { mounted = false; stop(); };
 }, []);
-
+  const [loading, setLoading] = useState(false);
   const handleRecord = async () => {
     if (!viewerRef.current) return;
 
@@ -98,6 +98,7 @@ useEffect(() => {
 
   return (
     <SidebarProvider>
+    <div className={loading ? "opacity-60 pointer-events-none select-none" : ""}>
       <AppSidebar
         projects={projects}
         selectedModel={selectedModel}
@@ -105,6 +106,7 @@ useEffect(() => {
         user={user}
         handleLogout={handleLogout}
       />
+    </div>
 
       <SidebarInset className="min-h-0">
         <div className="border-b p-3 sm:p-4 flex items-center justify-between ">
@@ -190,6 +192,7 @@ useEffect(() => {
                   ref={viewerRef}
                   modelPath={encodeURI(selectedPath)}
                   projectType={selectedProject.type} 
+                  onLoadingChange={setLoading}
                 />
                 
               </>
@@ -199,8 +202,18 @@ useEffect(() => {
                     ⚠️ SELECCIONE UN PROYECTO PARA CONTINUAR
                    </p>
                 </div>
+                
               
               )}
+                  {/* Overlay de carga (espera) */}
+                  {loading && (
+                    <div className="absolute inset-0 z-30 grid place-items-center bg-background/60 backdrop-blur-[1px] pointer-events-auto">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-sm text-muted-foreground">Cargando modelo…</p>
+                      </div>
+                    </div>
+                  )}
           </div>
         </div>
       </SidebarInset>
