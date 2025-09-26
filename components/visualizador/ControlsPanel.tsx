@@ -199,15 +199,15 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
   React.useEffect(() => localStorage.setItem("controlsCollapsed", collapsed ? "1" : "0"), [collapsed]);
   React.useEffect(() => localStorage.setItem("controlsPinned", pinned ? "1" : "0"), [pinned]);
 
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "c" && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        setOpen((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  // React.useEffect(() => {
+  //   const onKey = (e: KeyboardEvent) => {
+  //     if (e.key.toLowerCase() === "c" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+  //       setOpen((v) => !v);
+  //     }
+  //   };
+  //   window.addEventListener("keydown", onKey);
+  //   return () => window.removeEventListener("keydown", onKey);
+  // }, []);
 
   const [pos, setPos] = React.useState(() => ({
     x: typeof window !== "undefined" ? window.innerWidth - 320 : 0,
@@ -218,7 +218,8 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
     dx: 0,
     dy: 0,
   });
-
+const isInteractive = (el: Element | null) =>
+  !!el && !!(el.closest("button, a, input, select, textarea, [role='button'], [data-no-drag]"));
   // cálculo de posición “snap” a la izquierda del viewer
   const calcSnapLeftPos = React.useCallback(() => {
     const anchor =
@@ -237,12 +238,20 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
   /* ============ DRAG DEL HEADER con Pointer Events (móvil + desktop) ============ */
   const onHeaderPointerDown = (e: React.PointerEvent) => {
     if (pinned) return; // si está anclado, no se arrastra
-    e.preventDefault();
-    e.stopPropagation();
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-    setDrag({ on: true, dx: e.clientX - pos.x, dy: e.clientY - pos.y });
+  if (isInteractive(e.target as Element)) return;     // ⟵ clave
+  if (e.button !== 0) return; // sólo botón izquierdo
+  e.preventDefault();
+  e.stopPropagation();
+  setDrag({ on: true, dx: e.clientX - pos.x, dy: e.clientY - pos.y });
   };
-
+const onHeaderMouseDown = (e: React.MouseEvent) => {
+  if (pinned) return;
+  if (isInteractive(e.target as Element)) return;     // ⟵ clave
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  setDrag({ on: true, dx: e.clientX - pos.x, dy: e.clientY - pos.y });
+};
   React.useEffect(() => {
     const mm = (e: PointerEvent) => {
       if (!drag.on) return;
@@ -412,51 +421,59 @@ export default function ControlsPanel({ controls, onControlsChange }: Props) {
         className={`flex items-center justify-between p-3 ${
           pinned ? "cursor-default" : "cursor-move"
         } bg-gray-700 rounded-t-lg border-b border-gray-600`}
-        onPointerDown={onHeaderPointerDown}             /* ← antes onMouseDown */
+        onPointerDown={onHeaderPointerDown}     
+        onMouseDown={onHeaderMouseDown}        /* ← antes onMouseDown */
         style={{ touchAction: "none" }}                 /* evita que el scroll robe el gesto */
       >
         <span className="text-sm text-gray-200">Controles</span>
         <div className="flex items-center gap-2 text-xs">
-          <button
-            title={collapsed ? "Maximizar (volver a flotante)" : "Minimizar"}
-            onClick={(e) => {
-              e.stopPropagation();
+        
+        <button
+  type="button"
+  title={collapsed ? "Maximizar (volver a flotante)" : "Minimizar"}
+  onClick={(e) => {
+    e.stopPropagation();
 
-              if (pinned && collapsed) {
-                setPos(calcSnapLeftPos());
-                setPinned(false);
-                setCollapsed(false);
-                setOpen(true);
-                return;
-              }
+    if (pinned && collapsed) {
+      setPos(calcSnapLeftPos());
+      setPinned(false);
+      setCollapsed(false);
+      setOpen(true);
+      return;
+    }
 
-              setCollapsed((v) => !v);
-            }}
-            className="px-2 py-1 rounded bg-gray-600 hover:bg-gray-500"
-          >
-            {collapsed ? "▢" : "—"}
-          </button>
-          <button
-            title={pinned ? "Desanclar" : "Anclar al navbar"}
-            onClick={(e) => {
-              e.stopPropagation();
-              setPinned((wasPinned) => {
-                const nowPinned = !wasPinned;
-                if (nowPinned) {
-                  prevCollapsedRef.current = collapsed;
-                  setCollapsed(true);
-                } else {
-                  setPos(calcSnapLeftPos());
-                  setOpen(true);
-                  setCollapsed(true);
-                }
-                return nowPinned;
-              });
-            }}
-            className="px-2 py-1 rounded bg-gray-600 hover:bg-gray-500"
-          >
-            📌
-          </button>
+    setCollapsed((v) => !v);
+  }}
+  className="px-2 py-1 rounded bg-gray-600 hover:bg-gray-500"
+>
+  {collapsed ? "▢" : "—"}
+</button>
+
+<button
+  type="button"
+  title={pinned ? "Desanclar" : "Anclar al navbar"}
+  onClick={(e) => {
+    e.stopPropagation();
+    setPinned((wasPinned) => {
+      const nowPinned = !wasPinned;
+      if (nowPinned) {
+        prevCollapsedRef.current = collapsed;
+        setCollapsed(true);
+      } else {
+        setPos(calcSnapLeftPos());
+        setOpen(true);
+        setCollapsed(true);
+      }
+      return nowPinned;
+    });
+  }}
+  className="px-2 py-1 rounded bg-gray-600 hover:bg-gray-500"
+>
+  📌
+</button>
+
+      
+      
         </div>
       </div>
 

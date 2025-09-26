@@ -1116,7 +1116,7 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
 
     {/* Overlay de carga (espera) */}
     {loading && (
-      <div className="absolute inset-0 z-30 grid place-items-center bg-background/60 backdrop-blur-[1px] pointer-events-none">
+      <div className="absolute inset-0 z-30 grid place-items-center bg-background/60 backdrop-blur-[1px] pointer-events-auto">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-sm text-muted-foreground">Cargando modelo…</p>
