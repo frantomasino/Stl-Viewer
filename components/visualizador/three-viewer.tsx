@@ -30,7 +30,11 @@ import ControlsPanel, {
   ControlsState,
 } from "@/components/visualizador/ControlsPanel";
 
-type ThreeViewerProps = { modelPath?: string; projectType?: string };
+type ThreeViewerProps = {
+  modelPath?: string;
+  projectType?: string;
+  onLoadingChange?: (v: boolean) => void;
+};
 // categorías que SÍ muestran el panel
 
 export type ThreeViewerHandle = {
@@ -52,7 +56,7 @@ type ExplodeItem = {
 };
 
 const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
-  ({ modelPath, projectType }, ref) => {
+  ({ modelPath, projectType, onLoadingChange }, ref) => {
     const [error, setError] = useState<Error | null>(null);
     const [reloadTick, setReloadTick] = useState(0); // 👈 para reintentar
     const [loading, setLoading] = React.useState(false);
@@ -488,6 +492,7 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
 
       setLoading(true);
       setError(null);
+      onLoadingChange?.(true);
       const scene = sceneRef.current!;
       const camera = cameraRef.current!;
       const controls = controlsRef.current!;
@@ -613,13 +618,16 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
               roughness: 0.7,
               transparent: true,
               opacity: 1,
+
               side: THREE.DoubleSide,
+
             });
             const mesh = new THREE.Mesh(geometry, mat);
             root.add(mesh);
 
             onModelReady(root);
             setLoading(false);
+            onLoadingChange?.(false);
           },
           undefined,
 
@@ -636,12 +644,14 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
           (gltf) => {
             onModelReady(gltf.scene);
             setLoading(false);
+            onLoadingChange?.(false);
           },
           undefined,
           (error) => {
             // console.error("❌ Error cargando modelo:", modelPath, error);
             setError(error);
             setLoading(false);
+            onLoadingChange?.(false);
           }
         );
       }
@@ -1110,58 +1120,48 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
       stopRecording,
     }));
 
- return (
-  <div ref={outerRef} className="w-full h-full relative">
-    <div ref={mountRef} className="absolute inset-0" />
+    return (
+      <div ref={outerRef} className="w-full h-full relative">
+        <div ref={mountRef} className="absolute inset-0" />
 
-    {/* Overlay de carga (espera) */}
-    {loading && (
-      <div className="absolute inset-0 z-30 grid place-items-center bg-background/60 backdrop-blur-[1px] pointer-events-auto">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-sm text-muted-foreground">Cargando modelo…</p>
-        </div>
+        {/* Panel NUEVO (separado) */}
+        {!showControls && (
+          <div className="absolute left-4 top-4 z-20 pointer-events-auto">
+            <ControlsPanel
+              controls={controlsState}
+              onControlsChange={applyControls}
+            />
+          </div>
+        )}
+
+        {/* Popup de error */}
+        <AlertDialog open={!!error} onOpenChange={() => setError(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>No se pudo cargar el modelo</AlertDialogTitle>
+              <AlertDialogDescription>
+                {modelPath
+                  ? "Hubo un error al cargar el modelo. Intente nuevamente."
+                  : "Hubo un error al cargar el modelo."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction
+                onClick={() => {
+                  setError(null);
+                  setReloadTick((t) => t + 1); // reintenta misma URL
+                }}
+              >
+                Reintentar
+              </AlertDialogAction>
+              <AlertDialogCancel onClick={() => setError(null)}>
+                Cerrar
+              </AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    )}
-
-    {/* Panel NUEVO (separado) */}
-    {!showControls && (
-      <div className="absolute left-4 top-4 z-20 pointer-events-auto">
-        <ControlsPanel
-          controls={controlsState}
-          onControlsChange={applyControls}
-        />
-      </div>
-    )}
-
-    {/* Popup de error */}
-    <AlertDialog open={!!error} onOpenChange={() => setError(null)}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>No se pudo cargar el modelo</AlertDialogTitle>
-          <AlertDialogDescription>
-            {modelPath
-              ? "Hubo un error al cargar el modelo. Intente nuevamente."
-              : "Hubo un error al cargar el modelo."}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogAction
-            onClick={() => {
-              setError(null);
-              setReloadTick((t) => t + 1); // reintenta misma URL
-            }}
-          >
-            Reintentar
-          </AlertDialogAction>
-          <AlertDialogCancel onClick={() => setError(null)}>
-            Cerrar
-          </AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
-);
+    );
   }
 );
 
