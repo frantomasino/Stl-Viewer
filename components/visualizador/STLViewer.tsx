@@ -135,17 +135,17 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
                 </Badge>
               )}
 
-              {/* ---- MOBILE: menú desplegable con acciones ---- */}
+              {/* ---- MOBILE: menú desplegable (icon-only) ---- */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="sm:hidden shrink-0"
+                    className="sm:hidden shrink-0 px-2"  // ← solo icono, sin texto
                     title="Opciones"
+                    aria-label="Opciones"
                   >
-                    <MoreHorizontal className="w-4 h-4 mr-2" />
-                    Opciones
+                    <MoreHorizontal className="w-5 h-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" sideOffset={8} className="w-44">
@@ -159,7 +159,7 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
 
                   <DropdownMenuSeparator />
 
-                  {/* Theme toggle dentro del menú (no le pasamos className para evitar warning TS) */}
+                  {/* Theme toggle dentro del menú */}
                   <DropdownMenuItem className="justify-between">
                     Tema
                     <span className="ml-2">
