@@ -303,7 +303,7 @@ export const ensureUserDoc = async (): Promise<void> => {
         uid: u.uid,
         name: u.displayName ?? "",
         email: u.email ?? "",
-        role: "TRIAL", // ← default inicial, NO se reescribe luego
+        role: "TRIAL",  
         department: "",
         status: "active",
         createdAt: serverTimestamp(),
@@ -502,7 +502,7 @@ export const sendContactMessage = async (
     email: data.email.trim(),
     phone: data.phone.trim(),
     message: data.message.trim(),
-    createdAt: serverTimestamp(), // requerido por la regla
+    createdAt: serverTimestamp(), 
   });
   return ref.id;
 };

@@ -40,8 +40,8 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Image/Visual */}
-          <div className="relative">
+          {/* Image/Visual — solo en escritorio */}
+          <div className="relative hidden sm:block">
             <div className="aspect-square bg-gradient-to-br from-primary/10 to-primary/5 rounded-3xl p-8 flex items-center justify-center">
               <div className="w-full h-full bg-muted rounded-2xl flex items-center justify-center">
                 <div className="text-center space-y-4">
