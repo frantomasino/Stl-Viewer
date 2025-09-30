@@ -35,6 +35,7 @@ interface AppSidebarProps {
   onModelSelect: (modelName: string) => void;
   user?: any;
   handleLogout?: () => void;
+  failedProject?: string | null; 
 }
 
 
@@ -112,6 +113,7 @@ export function AppSidebar({
   projects,
   selectedModel,
   onModelSelect,
+  failedProject,
 }: AppSidebarProps) {
   // estados de acordeón
   const [openProjects, setOpenProjects] = React.useState(true);
@@ -160,15 +162,18 @@ export function AppSidebar({
             >
               <div className="space-y-2">
                 {projects.map((p, idx) => (
-                  <Card
-                    key={`${p.path}-${idx}`}
-                    className={`p-3 cursor-pointer transition-colors ${
-                      selectedModel === p.name
-                        ? "bg-cyan-100 border-cyan-300"
-                        : "bg-white hover:bg-gray-50"
-                    }`}
-                    onClick={() => onModelSelect(p.name)}
-                  >
+            <Card
+  key={`${p.path}-${idx}`}
+  className={`p-3 cursor-pointer transition-colors ${
+    selectedModel === p.name
+      ? (failedProject === p.name
+          ? "bg-red-200 border-red-600"       // 👈 seleccionado + falló => ROJO
+          : "bg-cyan-100 border-cyan-300")    // 👈 seleccionado + OK => CELESTE
+      : "bg-white hover:bg-gray-50"
+  }`}
+  onClick={() => onModelSelect(p.name)}
+>
+
                     <div className="font-medium text-gray-800 text-sm">
                       {p.name}
                     </div>

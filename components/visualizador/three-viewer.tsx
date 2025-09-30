@@ -34,6 +34,8 @@ type ThreeViewerProps = {
   modelPath?: string;
   projectType?: string;
   onLoadingChange?: (v: boolean) => void;
+  onLoadSuccess?: () => void;   // 👈 NUEVO
+  onLoadError?: (err: Error) => void; // 👈 NUEVO
 };
 // categorías que SÍ muestran el panel
 
@@ -56,7 +58,7 @@ type ExplodeItem = {
 };
 
 const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
-  ({ modelPath, projectType, onLoadingChange }, ref) => {
+  ({ modelPath, projectType, onLoadingChange, onLoadSuccess,onLoadError}, ref) => {
     const [error, setError] = useState<Error | null>(null);
     const [reloadTick, setReloadTick] = useState(0); // 👈 para reintentar
     const [loading, setLoading] = React.useState(false);
@@ -628,12 +630,16 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
             onModelReady(root);
             setLoading(false);
             onLoadingChange?.(false);
+            onLoadSuccess?.();
           },
           undefined,
 
           (error) => {
             // console.error("❌ Error cargando modelo:", modelPath, error);
             setError(error);
+                setLoading(false);
+    onLoadingChange?.(false);
+    onLoadError?.(error as Error); // 👈 avisar error
           }
           // (err) => console.error("❌ Error cargando STL:", modelPath, err)
         );
@@ -645,6 +651,7 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
             onModelReady(gltf.scene);
             setLoading(false);
             onLoadingChange?.(false);
+            onLoadSuccess?.();
           },
           undefined,
           (error) => {
@@ -652,6 +659,7 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
             setError(error);
             setLoading(false);
             onLoadingChange?.(false);
+            onLoadError?.(error as Error);
           }
         );
       }

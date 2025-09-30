@@ -50,12 +50,15 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   // const [isRecording, setIsRecording] = useState(false); // 🔕 Grabación desactivada
-
+const [failedProject, setFailedProject] = useState<string | null>(null);
   const viewerRef = useRef<ThreeViewerHandle>(null);
 
   const selectedProject = projects.find((p) => p.name === selectedModel);
   const selectedPath = selectedProject?.path;
-
+const handleSelectProject = (name: string) => {
+  setSelectedModel(name);
+  setFailedProject(null); // 👈 limpiar rojo previo al reintentar
+};
   useEffect(() => {
     let mounted = true;
     const stop = onAuthStateChanged(auth, async (u) => {
@@ -99,6 +102,7 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
           onModelSelect={setSelectedModel}
           user={user}
           handleLogout={handleLogout}
+          failedProject={failedProject}
         />
       </div>
 
@@ -241,6 +245,8 @@ export default function STLViewer({ user, handleLogout }: STLViewerProps) {
                   modelPath={encodeURI(selectedPath)}
                   projectType={selectedProject!.type}
                   onLoadingChange={setLoading}
+                    onLoadSuccess={() => setFailedProject(null)}          // 👈 éxito: limpiar rojo
+  onLoadError={() => setFailedProject(selectedModel)} 
                 />
               </>
             ) : (
