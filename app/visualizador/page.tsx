@@ -108,7 +108,7 @@ function LoginComponent({
                 <Input
                   id="email"
                   type="text"
-                  placeholder="doctor@hospital.com"
+                  placeholder="user@gmail.com"
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
@@ -138,9 +138,9 @@ function LoginComponent({
 
               <div className="flex flex-col gap-2">
                 <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
-                  {isLoading ? "Ingresando..." : "Ingresar con Email"}
+                  {isLoading ? "Ingresando..." : "Ingresar con Usuario"}
                 </Button>
-                <Button
+                {/* <Button
                   type="button"
                   className="w-full h-12 text-base"
                   variant="secondary"
@@ -148,7 +148,7 @@ function LoginComponent({
                   onClick={handleFirestoreLogin}
                 >
                   {isLoading ? "Ingresando..." : "Ingresar con Usuario"}
-                </Button>
+                </Button> */}
               </div>
             </form>
           </CardContent>
@@ -265,7 +265,7 @@ export default function Page() {
           <STLViewer user={user} handleLogout={handleLogout} />
         </div>
 
-        {user?.providerData?.some((p) => p.providerId === "password") && showChangePassword && (
+        {/* {user?.providerData?.some((p) => p.providerId === "password") && showChangePassword && (
           <div className="p-4 bg-muted w-full md:w-80">
             <h3 className="font-semibold mb-2">Cambiar contraseña</h3>
             <Input
@@ -299,7 +299,7 @@ export default function Page() {
               </p>
             )}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
