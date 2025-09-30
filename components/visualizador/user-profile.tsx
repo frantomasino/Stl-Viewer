@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsAdminFromUsers } from "@/hooks/useIsAdminFromUsers";
 import { GoToAdminLink } from "./UserLinks";
+import { Eye, EyeOff } from "lucide-react";
 
 import {
   Dialog,
@@ -133,6 +134,13 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
   const [nextPass, setNextPass] = useState("");
   const [nextPass2, setNextPass2] = useState("");
   const [changeMsg, setChangeMsg] = useState("");
+
+  const [showNew, setShowNew] = useState(false); // activar contraseña: nueva
+  const [showConfirm, setShowConfirm] = useState(false); // activar contraseña: confirmar
+
+  const [showCurr, setShowCurr] = useState(false);
+  const [showNext, setShowNext] = useState(false);
+  const [showNext2, setShowNext2] = useState(false);
   const [changeLoading, setChangeLoading] = useState(false);
 
   const hasPasswordProvider = !!user?.providerData?.some(
@@ -339,11 +347,11 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
             )}
             {/* 🚨 Alerta si no hay password provider */}
             {!hasPasswordProvider && (
-               <span
-          className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center shadow"
-          title="Editar perfil - Activar acceso por contraseña"
-          aria-label="Requiere contraseña"
-        >
+              <span
+                className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-yellow-500 text-white text-[10px] flex items-center justify-center shadow"
+                title="Editar perfil - Activar acceso por contraseña"
+                aria-label="Requiere contraseña"
+              >
                 !
               </span>
             )}
@@ -524,28 +532,54 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
                     <div className="mt-3 space-y-2">
                       <div className="grid gap-2">
                         <Label htmlFor="new-pass">Nueva contraseña</Label>
-                        <Input
-                          id="new-pass"
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder={`Mínimo ${PASSWORD_POLICY.minLen} caracteres`}
-                          autoComplete="new-password"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="new-pass"
+                            type={showNew ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder={`Mínimo ${PASSWORD_POLICY.minLen} caracteres`}
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNew((v) => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showNew ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid gap-2">
                         <Label htmlFor="confirm-pass">
                           Confirmar contraseña
                         </Label>
-                        <Input
-                          id="confirm-pass"
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Repetí la contraseña"
-                          autoComplete="new-password"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="confirm-pass"
+                            type={showConfirm ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Repetí la contraseña"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirm((v) => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showConfirm ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       {addPassMsg && (
@@ -589,7 +623,6 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
                     </Button>
                   </div>
 
-                  {/* ✅ Mensaje siempre visible aunque cierres el bloque */}
                   {changeMsg && (
                     <p
                       className={`mt-3 rounded border px-3 py-2 text-sm ${
@@ -606,37 +639,76 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
                     <div className="mt-3 space-y-2">
                       <div className="grid gap-2">
                         <Label htmlFor="curr-pass">Contraseña actual</Label>
-                        <Input
-                          id="curr-pass"
-                          type="password"
-                          value={currPass}
-                          onChange={(e) => setCurrPass(e.target.value)}
-                          autoComplete="current-password"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="curr-pass"
+                            type={showCurr ? "text" : "password"}
+                            value={currPass}
+                            onChange={(e) => setCurrPass(e.target.value)}
+                            autoComplete="current-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCurr((v) => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showCurr ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid gap-2">
                         <Label htmlFor="next-pass">Nueva contraseña</Label>
-                        <Input
-                          id="next-pass"
-                          type="password"
-                          value={nextPass}
-                          onChange={(e) => setNextPass(e.target.value)}
-                          placeholder={`Mínimo ${PASSWORD_POLICY.minLen} caracteres`}
-                          autoComplete="new-password"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="next-pass"
+                            type={showNext ? "text" : "password"}
+                            value={nextPass}
+                            onChange={(e) => setNextPass(e.target.value)}
+                            placeholder={`Mínimo ${PASSWORD_POLICY.minLen} caracteres`}
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNext((v) => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showNext ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid gap-2">
                         <Label htmlFor="next-pass2">Confirmar contraseña</Label>
-                        <Input
-                          id="next-pass2"
-                          type="password"
-                          value={nextPass2}
-                          onChange={(e) => setNextPass2(e.target.value)}
-                          placeholder="Repetí la contraseña"
-                          autoComplete="new-password"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="next-pass2"
+                            type={showNext2 ? "text" : "password"}
+                            value={nextPass2}
+                            onChange={(e) => setNextPass2(e.target.value)}
+                            placeholder="Repetí la contraseña"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNext2((v) => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showNext2 ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex justify-end">
