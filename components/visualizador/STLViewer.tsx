@@ -245,7 +245,7 @@ const handleSelectProject = (name: string) => {
                   modelPath={encodeURI(selectedPath)}
                   projectType={selectedProject!.type}
                   onLoadingChange={setLoading}
-                    onLoadSuccess={() => setFailedProject(null)}          // 👈 éxito: limpiar rojo
+                    onLoadSuccess={() => setFailedProject(null)}           
   onLoadError={() => setFailedProject(selectedModel)} 
                 />
               </>
