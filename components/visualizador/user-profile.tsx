@@ -242,17 +242,17 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
 
                 <div className="grid gap-2">
                   <Label htmlFor="specialty">Especialidad</Label>
-                  <Input id="specialty" value={profile.specialty} onChange={(e) => setProfile({ ...profile, specialty: e.target.value })} />
+                  <Input id="specialty" value={profile.specialty} onChange={(e) => setProfile({ ...profile, specialty: e.target.value })} placeholder="Especialidad"/>
                 </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="institution">Institución</Label>
-                  <Input id="institution" value={profile.institution} onChange={(e) => setProfile({ ...profile, institution: e.target.value })} />
+                  <Input id="institution" value={profile.institution} onChange={(e) => setProfile({ ...profile, institution: e.target.value })} placeholder="Institución"/>
                 </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="bio">Bio</Label>
-                  <Textarea id="bio" value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} rows={3} />
+                  <Textarea id="bio" value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} rows={3} placeholder="Perfil médico" />
                 </div>
               </div>
 

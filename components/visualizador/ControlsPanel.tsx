@@ -2,6 +2,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { SlidersHorizontal  } from "lucide-react"
 
 export type Limits = { min: number; max: number };
 
@@ -494,7 +495,7 @@ const onHeaderMouseDown = (e: React.MouseEvent) => {
       className="whitespace-nowrap"
       title="Abrir controles"
     >
-      📌 Controles
+      <SlidersHorizontal className="h-4 w-4" />
     </Button>
   );
 
