@@ -508,9 +508,10 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
           transparencyControllerRef.current?.setValue?.(
             guiParamsRef.current.opacity
           );
-          showTipAt(event.clientX, event.clientY, mesh.name || "Mesh");
-          window.clearTimeout((onCanvasClick as any)._t);
-          (onCanvasClick as any)._t = window.setTimeout(hideTip, 1200);
+
+          // showTipAt(event.clientX, event.clientY, mesh.name || "Mesh");
+          // window.clearTimeout((onCanvasClick as any)._t);
+          // (onCanvasClick as any)._t = window.setTimeout(hideTip, 1200);
           // refleja en el panel nuevo
           setControlsState((p) => ({
             ...p,
@@ -523,10 +524,30 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
         }
       };
 
-      renderer.domElement.addEventListener("click", onCanvasClick);
+      const onCanvasMouseDown= (event: MouseEvent)=> {
+      
+        const rect = renderer.domElement.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        mouseRef.current.set(x, y);
+
+        raycasterRef.current.setFromCamera(mouseRef.current, camera);
+        const intersects = raycasterRef.current.intersectObjects(selectableMeshesRef.current, true);
+
+        if (intersects.length > 0) {
+          const mesh = intersects[0].object;
+          // console.log('Presionaste sobre la malla:', mesh.name || '[sin nombre]');
+          showTipAt(event.clientX, event.clientY, mesh.name || "Mesh"); 
+          window.clearTimeout((onCanvasClick as any)._t); 
+          (onCanvasClick as any)._t = window.setTimeout(hideTip, 1200);
+        }
+      };
+
+
+
       // ===== Long-press (mobile) =====
       let tipTouchTimer: number | null = null;
-
+      
       const onTouchStartTip = (ev: TouchEvent) => {
         if (!ev.touches.length) return;
         const t = ev.touches[0];
@@ -548,7 +569,9 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
         }
         setTimeout(hideTip, 800);
       };
-
+      
+      renderer.domElement.addEventListener('mousedown', onCanvasMouseDown);
+      renderer.domElement.addEventListener("click", onCanvasClick);
       // attach
       renderer.domElement.addEventListener("touchstart", onTouchStartTip, {
         passive: true,
@@ -562,6 +585,8 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
 
       return () => {
         ro.disconnect();
+        renderer.domElement.removeEventListener('mousedown', onCanvasMouseDown);
+
         renderer.domElement.removeEventListener("click", onCanvasClick);
         // cleanup (en el return del mismo useEffect)
         renderer.domElement.removeEventListener("touchstart", onTouchStartTip);
