@@ -31,14 +31,14 @@ export function ViewerIntro() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-            <Button
+            {/* <Button
               variant="outline"
               size="lg"
               className="rounded-2xl px-8 py-4 text-lg font-medium bg-transparent"
             >
               <Play className="h-5 w-5 mr-2" />
               Ver Demo
-            </Button>
+            </Button> */}
             {/* Ajuste en botón primario */}
             <Button
               size="lg"

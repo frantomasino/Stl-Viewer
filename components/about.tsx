@@ -9,7 +9,7 @@ export function About() {
             <div className="space-y-4 text-lg leading-relaxed text-muted-foreground">
               <p>
                 En LAMBDA 3D nos especializamos en el diseño y la impresión de biomodelos personalizados para
-                planificación quirúrgica y maquetas anatómicas educativas.
+                planificación quirúrgica y maquetas educativas.
               </p>
               <p>
                 Nuestra misión es acercar la innovación tecnológica al servicio de la salud y la educación,

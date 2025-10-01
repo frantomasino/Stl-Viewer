@@ -3,41 +3,41 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 const cases = [
   {
-    title: "Modelo cardíaco para cirugía",
+    title: "Paciente con anomalía del retorno venoso",
     category: "Planificación Quirúrgica",
     image: "/img/corazon.jpeg",
   },
   {
-    title: "Modelo cirugía de tórax",
-    category: "Planificación Quirúrgica",
-    image: "/img/torax.jpeg",
+    title: "Kit de células",
+    category: "Maqueta educativa ",
+    image: "/img/Celulas.jpg",
   },
     {
     title: "Biomodelo de cráneo",
-    category: "Planificación Quirúrgica",
-    image: "/img/craneo.jpeg",
+    category: "Cordoma en C3",
+    image: "/img/Cordoma.png",
   },
-  {
-    title: "Modelo de columna vertebral",
-    category: "Educación",
-    image: "/img/3d-spine-model-for-medical-education.jpg",
-  },
+  // {
+  //   title: "Modelo de columna vertebral",
+  //   category: "Educación",
+  //   image: "/img/3d-spine-model-for-medical-education.jpg",
+  // },
 
-  {
-    title: "Modelo de articulación",
-    category: "Educación",
-    image: "/img/3d-joint-model-for-orthopedic-education.jpg",
-  },
-  {
-    title: "Órganos anatómicos",
-    category: "Educación Médica",
-    image: "/img/3d-anatomical-organs-for-medical-training.jpg",
-  },
+  // {
+  //   title: "Modelo de articulación",
+  //   category: "Educación",
+  //   image: "/img/3d-joint-model-for-orthopedic-education.jpg",
+  // },
+  // {
+  //   title: "Órganos anatómicos",
+  //   category: "Educación Médica",
+  //   image: "/img/3d-anatomical-organs-for-medical-training.jpg",
+  // },
 ]
 
 export function Cases() {
   return (
-    <section id="casos" className="py-24 bg-muted/30">
+    <section id="casos" className="py-24 ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-balance">Casos de Éxito</h2>

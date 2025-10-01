@@ -11,13 +11,13 @@ const services = [
   },
   {
     icon: GraduationCap,
-    title: "Maquetas anatómicas educativas",
-    description: "Piezas didácticas para docentes y estudiantes que facilitan la comprensión anatómica.",
+    title: "Maquetas educativas",
+    description: "Piezas didácticas para docentes y estudiantes que facilitan el acercamiento a la ciencia.",
   },
   {
     icon: Palette,
-    title: "Diseño 3D personalizado",
-    description: "Desarrollo a medida según la necesidad clínica o educativa.",
+    title: "Desarrollos 3D personalizados",
+    description: "Simuladores a medida según la necesidad clínica o educativa.",
   },
 ]
 
@@ -27,9 +27,9 @@ export function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-balance">Nuestros Servicios</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
+          {/* <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
             Soluciones especializadas en impresión 3D para el sector salud y educativo
-          </p>
+          </p> */}
         </div>
 
         <div className="hidden lg:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -50,12 +50,12 @@ export function Services() {
                 <CardContent className="flex flex-col flex-1">
                   <CardDescription className="text-base leading-relaxed mb-4">{service.description}</CardDescription>
 
-                  <div className="mt-auto">
+                  {/* <div className="mt-auto">
                     <Button variant="ghost" className="p-0 h-auto font-medium text-primary group/btn">
                       Saber más
                       <ArrowRight className="h-4 w-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
                     </Button>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             )

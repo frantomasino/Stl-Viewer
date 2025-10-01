@@ -4,12 +4,12 @@ const benefits = [
   {
     icon: Target,
     title: "Precisión y detalle anatómico",
-    description: "Modelos de alta fidelidad basados en datos médicos reales",
+    description: "Segmentaciones de alta fidelidad basadas en imágenes médicas",
   },
   {
     icon: Users,
-    title: "Acompañamiento interdisciplinario",
-    description: "Trabajo conjunto con profesionales médicos y educadores",
+    title: "Equipo interdisciplinario",
+    description: "Trabajo conjunto entre profesionales de salud e ingeniería",
   },
   {
     icon: Wrench,
@@ -20,10 +20,10 @@ const benefits = [
 
 export function Benefits() {
   return (
-    <section className="py-24">
+    <section className="py-24 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-balance">Nuestros Diferenciales</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-balance">En que nos diferenciamos</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
             Aportamos valor en cada etapa del proceso, desde el diseño hasta la entrega
           </p>

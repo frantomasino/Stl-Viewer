@@ -295,7 +295,7 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
 
       const gizmo = new ViewportGizmo(camera, renderer, {
         type: "sphere",
-        size: 150,
+        size: 90,
         placement: "bottom-right",
         resolution: 64,
         lineWidth: 2,
@@ -525,7 +525,6 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
       };
 
       const onCanvasMouseDown= (event: MouseEvent)=> {
-      
         const rect = renderer.domElement.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
