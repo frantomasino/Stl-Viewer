@@ -104,7 +104,7 @@ function LoginComponent({
               className="space-y-4"
             >
               <div className="space-y-2">
-                <Label htmlFor="email">Email o usuario</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="text"

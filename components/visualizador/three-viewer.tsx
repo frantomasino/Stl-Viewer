@@ -34,7 +34,7 @@ type ThreeViewerProps = {
   modelPath?: string;
   projectType?: string;
   onLoadingChange?: (v: boolean) => void;
-  onLoadSuccess?: () => void;   // 👈 NUEVO
+  onLoadSuccess?: () => void; // 👈 NUEVO
   onLoadError?: (err: Error) => void; // 👈 NUEVO
 };
 // categorías que SÍ muestran el panel
@@ -58,7 +58,10 @@ type ExplodeItem = {
 };
 
 const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
-  ({ modelPath, projectType, onLoadingChange, onLoadSuccess,onLoadError}, ref) => {
+  (
+    { modelPath, projectType, onLoadingChange, onLoadSuccess, onLoadError },
+    ref
+  ) => {
     const [error, setError] = useState<Error | null>(null);
     const [reloadTick, setReloadTick] = useState(0); // 👈 para reintentar
     const [loading, setLoading] = React.useState(false);
@@ -169,62 +172,56 @@ const ThreeViewer = forwardRef<ThreeViewerHandle, ThreeViewerProps>(
         mr.stop();
       });
     }
-//=================ttol
+    //=================ttol
 
-// === Tooltip minimal ===
-const [tip, setTip] = useState({ show: false, x: 0, y: 0, text: "" });
+    // === Tooltip minimal ===
+    const [tip, setTip] = useState({ show: false, x: 0, y: 0, text: "" });
 
-function showTipAt(clientX: number, clientY: number, text: string) {
-  const renderer = rendererRef.current;
-  if (!renderer) return;
-  const rect = renderer.domElement.getBoundingClientRect();
-  const pad = 10; // que no tape el cursor
-  setTip({ show: true, x: clientX - rect.left + pad, y: clientY - rect.top + pad, text });
-}
-function hideTip() {
-  setTip((t) => (t.show ? { ...t, show: false } : t));
-}
+    function showTipAt(clientX: number, clientY: number, text: string) {
+      const renderer = rendererRef.current;
+      if (!renderer) return;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const pad = 10; // que no tape el cursor
+      setTip({
+        show: true,
+        x: clientX - rect.left + pad,
+        y: clientY - rect.top + pad,
+        text,
+      });
+    }
+    function hideTip() {
+      setTip((t) => (t.show ? { ...t, show: false } : t));
+    }
 
-// reusa tu raycaster y mouseRef existentes
-function pickMeshAtClientXY(clientX: number, clientY: number): THREE.Mesh | null {
-  const renderer = rendererRef.current;
-  const camera = cameraRef.current;
-  if (!renderer || !camera) return null;
+    // reusa tu raycaster y mouseRef existentes
+    function pickMeshAtClientXY(
+      clientX: number,
+      clientY: number
+    ): THREE.Mesh | null {
+      const renderer = rendererRef.current;
+      const camera = cameraRef.current;
+      if (!renderer || !camera) return null;
 
-  const rect = renderer.domElement.getBoundingClientRect();
-  const x = ((clientX - rect.left) / rect.width) * 2 - 1;
-  const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
-  mouseRef.current.set(x, y);
-  raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      mouseRef.current.set(x, y);
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
 
-  const intersects = raycasterRef.current.intersectObjects(
-    selectableMeshesRef.current.filter((m) => {
-      const mat = getMat(m);
-      if (mat) mat.side = THREE.DoubleSide;
-      const visible = m.visible !== false;
-      const op = (mat?.opacity ?? 1) > 0.001;
-      return visible && op;
-    }),
-    true
-  );
+      const intersects = raycasterRef.current.intersectObjects(
+        selectableMeshesRef.current.filter((m) => {
+          const mat = getMat(m);
+          if (mat) mat.side = THREE.DoubleSide;
+          const visible = m.visible !== false;
+          const op = (mat?.opacity ?? 1) > 0.001;
+          return visible && op;
+        }),
+        true
+      );
 
-  return intersects.length ? (intersects[0].object as THREE.Mesh) : null;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      return intersects.length ? (intersects[0].object as THREE.Mesh) : null;
+    }
 
     // ================= PANEL NUEVO: estado =================
     const [controlsState, setControlsState] = React.useState<ControlsState>({
@@ -511,9 +508,9 @@ function pickMeshAtClientXY(clientX: number, clientY: number): THREE.Mesh | null
           transparencyControllerRef.current?.setValue?.(
             guiParamsRef.current.opacity
           );
-showTipAt(event.clientX, event.clientY, mesh.name || "Mesh");
-window.clearTimeout((onCanvasClick as any)._t);
-(onCanvasClick as any)._t = window.setTimeout(hideTip, 1200);
+          showTipAt(event.clientX, event.clientY, mesh.name || "Mesh");
+          window.clearTimeout((onCanvasClick as any)._t);
+          (onCanvasClick as any)._t = window.setTimeout(hideTip, 1200);
           // refleja en el panel nuevo
           setControlsState((p) => ({
             ...p,
@@ -525,41 +522,51 @@ window.clearTimeout((onCanvasClick as any)._t);
           if (!isExploding() && planesReadyRef.current) updateClippingState();
         }
       };
-      
+
       renderer.domElement.addEventListener("click", onCanvasClick);
-// ===== Long-press (mobile) =====
-let tipTouchTimer: number | null = null;
+      // ===== Long-press (mobile) =====
+      let tipTouchTimer: number | null = null;
 
-const onTouchStartTip = (ev: TouchEvent) => {
-  if (!ev.touches.length) return;
-  const t = ev.touches[0];
-  tipTouchTimer = window.setTimeout(() => {
-    const mesh = pickMeshAtClientXY(t.clientX, t.clientY);
-    if (mesh) showTipAt(t.clientX, t.clientY, mesh.name || "Mesh");
-  }, 450); // 0.45s de presión
-};
-const onTouchMoveTip = () => {
-  if (tipTouchTimer) { clearTimeout(tipTouchTimer); tipTouchTimer = null; }
-};
-const onTouchEndTip = () => {
-  if (tipTouchTimer) { clearTimeout(tipTouchTimer); tipTouchTimer = null; }
-  setTimeout(hideTip, 800);
-};
+      const onTouchStartTip = (ev: TouchEvent) => {
+        if (!ev.touches.length) return;
+        const t = ev.touches[0];
+        tipTouchTimer = window.setTimeout(() => {
+          const mesh = pickMeshAtClientXY(t.clientX, t.clientY);
+          if (mesh) showTipAt(t.clientX, t.clientY, mesh.name || "Mesh");
+        }, 450); // 0.45s de presión
+      };
+      const onTouchMoveTip = () => {
+        if (tipTouchTimer) {
+          clearTimeout(tipTouchTimer);
+          tipTouchTimer = null;
+        }
+      };
+      const onTouchEndTip = () => {
+        if (tipTouchTimer) {
+          clearTimeout(tipTouchTimer);
+          tipTouchTimer = null;
+        }
+        setTimeout(hideTip, 800);
+      };
 
-// attach
-renderer.domElement.addEventListener("touchstart", onTouchStartTip, { passive: true });
-renderer.domElement.addEventListener("touchmove", onTouchMoveTip, { passive: true });
-renderer.domElement.addEventListener("touchend", onTouchEndTip, { passive: true });
-
-
+      // attach
+      renderer.domElement.addEventListener("touchstart", onTouchStartTip, {
+        passive: true,
+      });
+      renderer.domElement.addEventListener("touchmove", onTouchMoveTip, {
+        passive: true,
+      });
+      renderer.domElement.addEventListener("touchend", onTouchEndTip, {
+        passive: true,
+      });
 
       return () => {
         ro.disconnect();
         renderer.domElement.removeEventListener("click", onCanvasClick);
         // cleanup (en el return del mismo useEffect)
-renderer.domElement.removeEventListener("touchstart", onTouchStartTip);
-renderer.domElement.removeEventListener("touchmove", onTouchMoveTip);
-renderer.domElement.removeEventListener("touchend", onTouchEndTip);
+        renderer.domElement.removeEventListener("touchstart", onTouchStartTip);
+        renderer.domElement.removeEventListener("touchmove", onTouchMoveTip);
+        renderer.domElement.removeEventListener("touchend", onTouchEndTip);
         cancelAnimationFrame(raf);
         guiRef.current?.destroy();
         gizmoRef.current?.dispose?.();
@@ -710,7 +717,6 @@ renderer.domElement.removeEventListener("touchend", onTouchEndTip);
               opacity: 1,
 
               side: THREE.DoubleSide,
-
             });
             const mesh = new THREE.Mesh(geometry, mat);
             root.add(mesh);
@@ -725,9 +731,9 @@ renderer.domElement.removeEventListener("touchend", onTouchEndTip);
           (error) => {
             // console.error("❌ Error cargando modelo:", modelPath, error);
             setError(error);
-                setLoading(false);
-    onLoadingChange?.(false);
-    onLoadError?.(error as Error); // 👈 avisar error
+            setLoading(false);
+            onLoadingChange?.(false);
+            onLoadError?.(error as Error); // 👈 avisar error
           }
           // (err) => console.error("❌ Error cargando STL:", modelPath, err)
         );
@@ -1219,16 +1225,16 @@ renderer.domElement.removeEventListener("touchend", onTouchEndTip);
     return (
       <div ref={outerRef} className="w-full h-full relative">
         <div ref={mountRef} className="absolute inset-0" />
-{tip.show && (
-  <div
-    className="absolute z-30 pointer-events-none select-none"
-    style={{ left: tip.x, top: tip.y }}
-  >
-    <div className="px-2 py-1 rounded-md bg-black/80 text-white text-xs shadow-lg whitespace-nowrap">
-      {tip.text}
-    </div>
-  </div>
-)}
+        {tip.show && (
+          <div
+            className="absolute z-30 pointer-events-none select-none"
+            style={{ left: tip.x, top: tip.y }}
+          >
+            <div className="px-2 py-1 rounded-md bg-black/80 text-white text-xs shadow-lg whitespace-nowrap">
+              {tip.text}
+            </div>
+          </div>
+        )}
         {/* Panel NUEVO (separado) */}
         {!showControls && (
           <div className="absolute left-4 top-4 z-20 pointer-events-auto">
