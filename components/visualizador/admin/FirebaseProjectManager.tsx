@@ -47,6 +47,7 @@ export function FirebaseProjectManager() {
   const [editingProject, setEditingProject] = useState<FirebaseProject | null>(
     null
   );
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -219,6 +220,18 @@ const handleDelete = async (projectId: string) => {
     return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
   };
 
+  const filteredProjects = projects.filter((p) => {
+  const q = searchTerm.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    (p.name ?? "").toLowerCase().includes(q) ||
+    (p.description ?? "").toLowerCase().includes(q) ||
+    (p.owner ?? "").toLowerCase().includes(q) ||
+    (p.status ?? "").toLowerCase().includes(q) ||
+    (p.type ?? "").toLowerCase().includes(q)
+  );
+});
+
   return (
     <Card>
       <CardHeader>
@@ -384,6 +397,20 @@ const handleDelete = async (projectId: string) => {
           </div>
         </div>
       </CardHeader>
+      
+{/* 🔎 Search bar */}
+<div className="max-w-2xl w-full mx-auto px-4">
+  <div className="relative mb-6">
+    {/* Si querés el ícono: */}
+    {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" /> */}
+    <Input
+      placeholder="Buscar proyectos por nombre, descripción, owner, estado o tipo…"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      // className="pl-10" // <- descomentar si usás el ícono
+    />
+  </div>
+</div>
       <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"> 
       
       <CardContent>
@@ -393,7 +420,7 @@ const handleDelete = async (projectId: string) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {projects.map((project) => (
+            {filteredProjects.map((project) => (
               <div
                 key={project.id}
                 className="flex items-center justify-between p-4 border rounded-lg"
@@ -453,7 +480,7 @@ const handleDelete = async (projectId: string) => {
                 </div>
               </div>
             ))}
-            {projects.length === 0 && (
+            {filteredProjects.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No projects found. Add your first project to get started.
               </div>

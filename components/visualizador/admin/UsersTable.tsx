@@ -245,6 +245,7 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
+            
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
@@ -302,6 +303,7 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
                 ))
               )}
             </TableBody>
+
           </Table>
         </div>
       </div>

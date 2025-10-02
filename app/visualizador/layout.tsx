@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 // import "@/globals.css";
 
 export const metadata: Metadata = {
-  title: "Visualizador 3D | LAMBDA 3D",
+  title: "Visualizador | LAMBDA 3D",
   description: "Visualizador 3D de modelos anatómicos",
   generator: "v0.dev",
 };
