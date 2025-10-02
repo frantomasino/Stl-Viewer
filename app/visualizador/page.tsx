@@ -14,16 +14,23 @@ import STLViewer from "../../components/visualizador/STLViewer";
 import { onIdTokenChanged, getAuth } from "firebase/auth";
 // Shadcn UI
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import { Eye, EyeOff } from "lucide-react";
 // 👇 importamos tu UserProfile
 import { UserProfile } from "@/components/visualizador/user-profile";
-
+import Link from "next/link";
 // --- LOGIN SOLO CLIENTE PARA EVITAR HYDRATION ERROR ---
-const ClientOnlyLogin = dynamic(() => Promise.resolve(LoginComponent), { ssr: false });
-
+const ClientOnlyLogin = dynamic(() => Promise.resolve(LoginComponent), {
+  ssr: false,
+});
 function LoginComponent({
   isLoading,
   error,
@@ -35,6 +42,7 @@ function LoginComponent({
   handleFirestoreLogin,
   handleGoogle,
 }: any) {
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <div
       className="
@@ -62,7 +70,11 @@ function LoginComponent({
               className="w-full h-12 text-base bg-transparent"
               disabled={isLoading}
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
+              <svg
+                className="w-5 h-5 mr-2"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -119,17 +131,29 @@ function LoginComponent({
 
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-12"
-                  autoComplete="off"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"} // 👈 toggle
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-12 pr-10" // 👈 le damos espacio al ojito
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
-
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-md">
                   {error}
@@ -137,7 +161,11 @@ function LoginComponent({
               )}
 
               <div className="flex flex-col gap-2">
-                <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Ingresando..." : "Ingresar con Usuario"}
                 </Button>
                 {/* <Button
@@ -149,6 +177,17 @@ function LoginComponent({
                 >
                   {isLoading ? "Ingresando..." : "Ingresar con Usuario"}
                 </Button> */}
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  ¿Necesitás cambiar tu contraseña? Contactate con a{" "}
+                  <Link
+                    href="https://wa.me/+541161960776?text=Hola%20Lambda%203D.%20Quiero%20cambiar%20la%20contraseña%20del%20visualizador.%20Mi%20mail%20es..."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    soporte
+                  </Link>
+                  
+                </p>
               </div>
             </form>
           </CardContent>
