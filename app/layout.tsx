@@ -3,9 +3,11 @@ import type { Metadata } from "next"
 import "./globals.css"
 import ClientLayout from "./ClientLayout"
 import { ScrollToTopButton } from "@/components/ScrollToTopButton"
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 
 export const metadata: Metadata = {
-  title: "LAMBDA 3D - Innovación 3D para la salud y la educación",
+  title: "LAMBDA 3D",
   description:
     "Transformamos la manera en que los profesionales de la salud y los educadores abordan sus problemáticas mediante soluciones innovadoras en biomodelos e impresión 3D.",
   generator: "Full Dev",
@@ -46,7 +48,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>
+            <body className={`min-h-dvh font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+
         <ClientLayout>{children}</ClientLayout>
         <ScrollToTopButton />
       </body>

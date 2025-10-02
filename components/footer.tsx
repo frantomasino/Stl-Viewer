@@ -1,5 +1,5 @@
-import Image from "next/image"
-
+import Image from "next/image";
+import Link from "next/link";
 export function Footer() {
   return (
     <footer className="bg-foreground text-background py-12">
@@ -15,8 +15,8 @@ export function Footer() {
               className="h-14 w-auto brightness-0 invert"
             />
             <p className="text-background/80 leading-relaxed max-w-md">
-              Innovación 3D para la salud y la educación. Transformamos ideas en soluciones tangibles mediante
-              biomodelos e impresión 3D.
+              Innovación 3D para la salud y la educación. Transformamos ideas en
+              soluciones tangibles mediante biomodelos e impresión 3D.
             </p>
           </div>
 
@@ -25,18 +25,27 @@ export function Footer() {
             <h4 className="font-semibold text-background">Servicios</h4>
             <ul className="space-y-2 text-background/80">
               <li>
-                <a href="#servicios" className="hover:text-background transition-colors">
+                <a
+                  href="#servicios"
+                  className="hover:text-background transition-colors"
+                >
                   Biomodelos quirúrgicos
                 </a>
               </li>
               <li>
-                <a href="#servicios" className="hover:text-background transition-colors">
+                <a
+                  href="#servicios"
+                  className="hover:text-background transition-colors"
+                >
                   Maquetas educativas
                 </a>
               </li>
               <li>
-                <a href="#servicios" className="hover:text-background transition-colors">
-                  Diseño personalizado
+                <a
+                  href="#servicios"
+                  className="hover:text-background transition-colors"
+                >
+                  Desarrollos 3D personalizados
                 </a>
               </li>
             </ul>
@@ -47,17 +56,26 @@ export function Footer() {
             <h4 className="font-semibold text-background">Empresa</h4>
             <ul className="space-y-2 text-background/80">
               <li>
-                <a href="#nosotros" className="hover:text-background transition-colors">
+                <a
+                  href="#nosotros"
+                  className="hover:text-background transition-colors"
+                >
                   Sobre nosotros
                 </a>
               </li>
               <li>
-                <a href="#casos" className="hover:text-background transition-colors">
+                <a
+                  href="#casos"
+                  className="hover:text-background transition-colors"
+                >
                   Casos de éxito
                 </a>
               </li>
               <li>
-                <a href="#contacto" className="hover:text-background transition-colors">
+                <a
+                  href="#contacto"
+                  className="hover:text-background transition-colors"
+                >
                   Contacto
                 </a>
               </li>
@@ -68,18 +86,26 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-background/20 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-background/60 text-sm">
-            © {new Date().getFullYear()} LAMBDA 3D. Todos los derechos reservados.
+            © {new Date().getFullYear()} LAMBDA 3D. Todos los derechos
+            reservados.
           </p>
+
           <div className="flex gap-6 text-sm text-background/60">
-            <a href="#" className="hover:text-background transition-colors">
+            <Link
+              href="/politica-privacidad"
+              className="hover:text-background transition-colors"
+            >
               Privacidad
-            </a>
-            <a href="#" className="hover:text-background transition-colors">
+            </Link>
+            <Link
+              href="/terminos-condiciones"
+              className="hover:text-background transition-colors"
+            >
               Términos
-            </a>
+            </Link>
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }

@@ -89,12 +89,12 @@ export function Services() {
                           {service.description}
                         </CardDescription>
 
-                        <div className="mt-auto">
+                        {/* <div className="mt-auto">
                           <Button variant="ghost" className="p-0 h-auto font-medium text-primary group/btn">
                             Saber más
                             <ArrowRight className="h-4 w-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
                           </Button>
-                        </div>
+                        </div> */}
                       </CardContent>
                     </Card>
                   </CarouselItem>

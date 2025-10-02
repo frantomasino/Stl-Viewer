@@ -5,7 +5,7 @@ const cases = [
   {
     title: "Paciente con anomalía del retorno venoso",
     category: "Planificación Quirúrgica",
-    image: "/img/corazon.jpeg",
+    image: "/img/corazon.png",
   },
   {
     title: "Kit de células",
@@ -13,8 +13,8 @@ const cases = [
     image: "/img/Celulas.jpg",
   },
     {
-    title: "Biomodelo de cráneo",
-    category: "Cordoma en C3",
+    title: "Cordoma en C3",
+    category: "Planificación Quirúrgica",
     image: "/img/Cordoma.png",
   },
   // {

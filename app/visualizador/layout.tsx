@@ -6,8 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 // import "@/globals.css";
 
 export const metadata: Metadata = {
-  title: "3D visualizer",
-  description: "3D visualizer",
+  title: "Visualizador 3D | LAMBDA 3D",
+  description: "Visualizador 3D de modelos anatómicos",
   generator: "v0.dev",
 };
 

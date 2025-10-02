@@ -27,7 +27,7 @@ export function ViewerIntro() {
 
           <p className="text-xl md:text-2xl text-muted-foreground text-pretty leading-relaxed">
             Explora nuestros modelos anatómicos en 3D de forma interactiva.
-            Perfecto para educación médica y planificación quirúrgica.
+            
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">

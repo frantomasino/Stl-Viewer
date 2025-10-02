@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MapPin, Send, Smartphone } from "lucide-react";
+import { Mail, MapPin, Send, Smartphone,Linkedin  } from "lucide-react";
 
 // Import correcto según tu estructura
 import { sendContactMessage } from "../lib/firebase";
@@ -175,6 +175,24 @@ export function Contact() {
                     </p>
                   </div>
                 </div>
+                 <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Linkedin className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Linkedin</p>
+                    <p className="text-muted-foreground">
+                                          <Link
+                      href="https://ar.linkedin.com/company/lambda3d"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Lambda3d
+                    </Link>
+                      
+                    </p>
+                  </div>
+                </div>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                     <Smartphone className="h-6 w-6 text-primary" />
@@ -182,7 +200,8 @@ export function Contact() {
                   <div>
                     <p className="font-medium">Teléfono</p>
                     <Link
-                      href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Quiero%20que%20me%20pases%20mas%20informacion%20sobre..."
+                      href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20contactarlos%20para%20recibir%20información%20sobre...
+"
                       target="_blank"
                       rel="noopener noreferrer"
                     >

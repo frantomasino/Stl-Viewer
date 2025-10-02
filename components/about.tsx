@@ -26,7 +26,7 @@ export function About() {
           <div className="relative">
             <div className="aspect-[4/3] bg-muted rounded-3xl overflow-hidden">
               <img
-                src="/img/modern-3d-printing-laboratory-with-biomedical-equi.jpg"
+                src="/img/labo.jpg"
                 alt="Laboratorio LAMBDA 3D"
                 className="w-full h-full object-cover"
               />
