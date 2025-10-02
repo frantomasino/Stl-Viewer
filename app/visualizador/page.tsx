@@ -55,10 +55,10 @@ function LoginComponent({
         <Card className="shadow-xl border-0">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-3xl font-bold text-foreground">
-              3D Medical Viewer
+              Visualizador 3D
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Iniciá sesión para acceder a tus archivos
+              Iniciá sesión para acceder a tus modelos
             </CardDescription>
           </CardHeader>
 
@@ -343,3 +343,11 @@ export default function Page() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
