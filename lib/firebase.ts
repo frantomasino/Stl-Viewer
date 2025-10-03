@@ -308,8 +308,7 @@ export const ensureUserDoc = async (): Promise<void> => {
         status: "active",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        acceptedTerms: false,
-        acceptedTermsAt: serverTimestamp(),
+
       },
       { merge: true }
     );
