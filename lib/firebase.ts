@@ -308,6 +308,8 @@ export const ensureUserDoc = async (): Promise<void> => {
         status: "active",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        acceptedTerms: false,
+        acceptedTermsAt: serverTimestamp(),
       },
       { merge: true }
     );
@@ -354,6 +356,21 @@ export const updateUser = async (userId: string, userData: Partial<FirebaseUser>
 export const deleteUser = async (userId: string) => {
   try {
     await deleteDoc(doc(db, "users", userId));
+    await deleteDoc(doc(db, "profiles", userId));
+
+
+    const q = query(collection(db, "memberships"), where("userId", "==", userId));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const docs = snap.docs;
+      for (let i = 0; i < docs.length; i += 500) {
+        const slice = docs.slice(i, i + 500);
+        const batch = writeBatch(db);
+        slice.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
+
   } catch (error) {
     console.error("Error deleting user:", error);
     throw error;
