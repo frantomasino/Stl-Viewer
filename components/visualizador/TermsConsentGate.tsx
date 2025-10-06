@@ -199,17 +199,18 @@ export default function TermsConsentGate({ children }: TermsConsentGateProps) {
               condiciones. En caso de no estar de acuerdo, el usuario deberá
               abstenerse de utilizar la plataforma.
             </p>
-<p>
-  Para más información, podés consultar el aviso legal y la política de privacidad en el pie de página{" "}
-  <Link
-    href="https://www.lambda3d.com.ar/terminos-condiciones"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-blue-600 underline hover:opacity-80"
-  >
-    https://www.lambda3d.com.ar/terminos-condiciones
-  </Link>
-</p>
+            <p>
+              Para más información, podés consultar el aviso legal y la política
+              de privacidad en el pie de página{" "}
+              <Link
+                href="https://www.lambda3d.com.ar/terminos-condiciones"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:opacity-80"
+              >
+                https://www.lambda3d.com.ar/terminos-condiciones
+              </Link>
+            </p>
             <p>
               Para continuar, debés aceptar estos términos. Si seleccionás
               “Rechazar”, cerrarás automáticamente la sesión.
