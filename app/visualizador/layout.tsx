@@ -4,6 +4,8 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "@/components/theme-provider";
 // import "@/globals.css";
+import TermsConsentGate from "@/components/visualizador/TermsConsentGate"; // 👈 importar
+
 
 export const metadata: Metadata = {
   title: "Visualizador | LAMBDA 3D",
@@ -16,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <body className={`min-h-dvh font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
+         <TermsConsentGate> {children}</TermsConsentGate>
         </ThemeProvider>
       </body>
     </html>

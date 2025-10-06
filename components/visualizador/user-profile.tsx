@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsAdminFromUsers } from "@/hooks/useIsAdminFromUsers";
 import { GoToAdminLink } from "./UserLinks";
-import { Eye, EyeOff } from "lucide-react";
+import { Edit, LogOut, Camera, Eye, EyeOff, Handshake } from "lucide-react";
+import Link from "next/link";
 
 import {
   Dialog,
@@ -26,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit, LogOut, Camera } from "lucide-react";
+
 
 import { db, auth } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -748,6 +749,93 @@ export function UserProfile({ user, handleLogout }: UserProfileProps) {
           )}
 
           <DropdownMenuSeparator />
+
+          {/* Botón para abrir los Términos y condiciones */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                className="cursor-pointer hover:bg-gray-100"
+              >
+                <Handshake className="mr-2 h-4 w-4" />{" "}
+                <span>Términos y condiciones</span>
+              </DropdownMenuItem>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Términos y condiciones</DialogTitle>
+                <DialogDescription>
+                  Lee atentamente este aviso legal antes de usar el
+                  visualizador.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-64 overflow-y-auto rounded border p-3 text-sm space-y-3">
+                <p>
+                  Bienvenido/a. Este acuerdo regula el uso del Visualizador 3D
+                  desarrollado por FullDev en colaboración con Lambda 3D.
+                </p>
+
+                <p>
+                  1) <strong>Objeto del software:</strong> El Visualizador 3D es
+                  una herramienta destinada exclusivamente a la visualización de
+                  modelos tridimensionales con fines informativos, demostrativos
+                  y educativos. No constituye ni debe interpretarse como
+                  dispositivo médico ni como herramienta apta para diagnóstico,
+                  planificación quirúrgica o toma de decisiones clínicas.
+                </p>
+
+                <p>
+                  2) <strong>Alcance y limitaciones:</strong> El software se
+                  presenta “tal cual está” y podrá ser modificado, actualizado o
+                  discontinuado en cualquier momento sin previo aviso. Está
+                  prohibido su uso como sustituto de criterios médicos o
+                  quirúrgicos.
+                </p>
+
+                <p>
+                  3) <strong>Responsabilidad:</strong> Lambda 3D no asume
+                  responsabilidad alguna por el uso del Visualizador más allá de
+                  su propósito visual. Cualquier interpretación, decisión o
+                  acción tomada por el usuario en base a la información
+                  desplegada será bajo su exclusiva responsabilidad. Ni Lambda
+                  3D ni FullDev garantizan que la información desplegada sea
+                  adecuada para fines médicos o quirúrgicos.
+                </p>
+
+                <p>
+                  4) <strong>Propiedad intelectual y colaboración:</strong> El
+                  software ha sido diseñado y desarrollado por FullDev, en
+                  colaboración con Lambda 3D, quien provee los modelos
+                  anatómicos y casos de prueba. Los derechos de propiedad
+                  intelectual del software corresponden a FullDev, sin perjuicio
+                  de los derechos que Lambda 3D conserva sobre los modelos y
+                  contenidos que provea.
+                </p>
+
+                <p>
+                  5) <strong>Aceptación de términos:</strong> El uso del
+                  Visualizador implica la aceptación expresa de estos términos y
+                  condiciones. En caso de no estar de acuerdo, el usuario deberá
+                  abstenerse de utilizar la plataforma.
+                </p>
+                <p>
+                  Para más información, podés consultar el aviso legal y la
+                  política de privacidad en el pie de página{" "}
+                  <Link
+                    href="https://www.lambda3d.com.ar/terminos-condiciones"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline hover:opacity-80"
+                  >
+                    https://www.lambda3d.com.ar/terminos-condiciones
+                  </Link>
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <DropdownMenuSeparator />
+
           <DropdownMenuItem
             onClick={handleLogout}
             className="cursor-pointer hover:bg-gray-100"

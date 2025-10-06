@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "LAMBDA 3D",
   description:
     "Transformamos la manera en que los profesionales de la salud y los educadores abordan sus problemáticas mediante soluciones innovadoras en biomodelos e impresión 3D.",
-  generator: "Full Dev",
+  generator: "FullDev",
   keywords: [
     "biomodelos",
     "impresión 3D",
