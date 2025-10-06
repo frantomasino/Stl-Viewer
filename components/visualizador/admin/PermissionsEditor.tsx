@@ -1,344 +1,276 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, CheckSquare, Square, RefreshCw } from "lucide-react";
-// import { grant, revoke, setAll, clearAll, type ACL } from "@/lib/acl"
-import { useToast } from "@/hooks/use-toast";
-import type { User, Project } from "./UsersTable";
+import { useMemo, useState } from "react";
 import {
-  assignUserToProject,
-  unassignUserFromProject,
-  replaceUserMemberships,
-} from "@/lib/firebase";
-// ✅ quedate solo con el tipo
-import type { ACL } from "@/lib/acl";
-// 🔽 leer colecciones directamente (sin helpers nuevos)
-import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RefreshCw, Search } from "lucide-react";
 
-interface PermissionsEditorProps {
+export type ACL = Record<string, string[]>; // userId -> projectIds
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+  status?: string;
+};
+
+type Project = {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  owner?: string;
+  created?: string | number | Date;
+  type?: string;
+};
+
+type Props = {
   users: User[];
   projects: Project[];
   acl: ACL;
   onACLChange: (acl: ACL) => void;
-}
+};
 
-function getUserUid(u: any): string {
-  // preferí campo uid (guardado al primer login)
-  if (u?.uid && typeof u.uid === "string" && u.uid.length >= 20) return u.uid;
-  // si /users está claveado por UID, id ya es el uid
-  if (u?.id && typeof u.id === "string" && u.id.length >= 20) return u.id;
-  throw new Error(
-    "El usuario seleccionado no tiene UID válido. Guardá `uid` o claveá /users por UID."
-  );
-}
+export function PermissionsEditor({ users, projects, acl, onACLChange }: Props) {
+  const [query, setQuery] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
-export function PermissionsEditor({
-  users,
-  projects,
-  acl,
-  onACLChange,
-}: PermissionsEditorProps) {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [userSearchTerm, setUserSearchTerm] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-  const { toast } = useToast();
-  // estados nuevos
-  const [projRefreshing, setProjRefreshing] = useState(false);
-  const [projList, setProjList] = useState<Project[]>(projects);
+  const filteredUsers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return users;
+    const norm = (s: unknown) =>
+      String(s ?? "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "");
+    const nQ = norm(q);
+    return users.filter((u) =>
+      [u.name, u.email, u.department, u.role, u.status].some((f) =>
+        norm(f).includes(nQ)
+      )
+    );
+  }, [users, query]);
 
-  // si cambian los props, sincronizo
-  useEffect(() => {
-    setProjList(projects);
-  }, [projects]);
-  const loadProjects = async () => {
-    setProjRefreshing(true);
-    try {
-      const snap = await getDocs(collection(db, "projects"));
-      const list: Project[] = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as any),
-      })) as Project[];
-      setProjList(list);
-    } finally {
-      setProjRefreshing(false);
-    }
-  };
-  // === REFRESH: leer ACL desde Firestore (colección memberships) ===
-  const loadACL = async () => {
-    setRefreshing(true);
-    try {
-      const snap = await getDocs(collection(db, "memberships"));
-      const fresh: ACL = {};
-      snap.forEach((d) => {
-        const data = d.data() as any;
-        const uid = String(data.userId);
-        const pid = String(data.projectId);
-        if (!fresh[uid]) fresh[uid] = [];
-        fresh[uid].push(pid);
-      });
-      onACLChange(fresh);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  const selectedUser = selectedUserId
+    ? users.find((u) => u.id === selectedUserId) || null
+    : null;
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
-  );
+  const userProjects = new Set(selectedUserId ? acl[selectedUserId] ?? [] : []);
 
-  // ACL helpers con UID real
-  const getUserProjectIdsByUid = (uid: string): string[] => {
-    return acl[uid] || [];
-  };
-  const isProjectGrantedByUid = (uid: string, projectId: string): boolean => {
-    return getUserProjectIdsByUid(uid).includes(projectId);
-  };
-
-  const handleProjectToggle = async (projectId: string, granted: boolean) => {
-    if (!selectedUser) return;
-    const uid = getUserUid(selectedUser);
-
-    // Persistencia
-    if (granted) await assignUserToProject(uid, projectId, "viewer");
-    else await unassignUserFromProject(uid, projectId);
-
-    // ✅ Merge local SIN tocar los demás usuarios
-    const curr = new Set(acl[uid] ?? []);
-    if (granted) curr.add(projectId);
-    else curr.delete(projectId);
-    onACLChange({ ...acl, [uid]: [...curr] });
-
-    const projName =
-      projList.find((p) => p.id === projectId)?.name || projectId;
-    toast({
-      title: "Access Updated",
-      description: `${granted ? "Granted" : "Revoked"} access to ${projName}`,
+  const toggleProject = (projectId: string, checked: boolean | string) => {
+    if (!selectedUserId) return;
+    const next = new Set(userProjects);
+    if (checked) next.add(projectId);
+    else next.delete(projectId);
+    onACLChange({
+      ...acl,
+      [selectedUserId]: Array.from(next),
     });
   };
 
-  const handleSelectAll = async () => {
-    if (!selectedUser) return;
-    const uid = getUserUid(selectedUser);
-    const allIds = projList.map((p) => p.id); // ✅ usa la lista fresca
-
-    await replaceUserMemberships(uid, allIds);
-
-    // ✅ solo reemplazá la entrada de ese uid
-    onACLChange({ ...acl, [uid]: allIds });
-  };
-  const handleClearAll = async () => {
-    if (!selectedUser) return;
-    const uid = getUserUid(selectedUser);
-
-    await replaceUserMemberships(uid, []);
-
-    // ✅ dejá los demás usuarios intactos
-    onACLChange({ ...acl, [uid]: [] });
+  const grantAll = () => {
+    if (!selectedUserId) return;
+    onACLChange({
+      ...acl,
+      [selectedUserId]: projects.map((p) => p.id),
+    });
   };
 
-  const formatDate = (created: any) => {
-    if (!created) return "";
-    if (typeof created === "object" && typeof created.toDate === "function") {
-      return created.toDate().toLocaleDateString("es-AR");
-    }
-    const date = new Date(created);
-    return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
+  const revokeAll = () => {
+    if (!selectedUserId) return;
+    onACLChange({
+      ...acl,
+      [selectedUserId]: [],
+    });
   };
-  useEffect(() => {
-    loadACL();
-    loadProjects();
-  }, []);
-
-  useEffect(() => {
-    // 2) refrescar cuando volvés a la ventana / pestaña del navegador
-    const onFocus = () => loadACL();
-    const onVisible = () => {
-      if (document.visibilityState === "visible") loadACL();
-    };
-
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, []);
-  const selectedUserUid = selectedUser ? getUserUid(selectedUser) : null;
-  const selectedUserProjectIds = selectedUserUid
-    ? getUserProjectIdsByUid(selectedUserUid)
-    : [];
-  const allProjectsGranted =
-    !!selectedUserUid && selectedUserProjectIds.length === projList.length;
-  const someProjectsGranted =
-    !!selectedUserUid && selectedUserProjectIds.length > 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Users List */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Users</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle>Permissions Management</CardTitle>
+        <CardDescription>
+          Grant or revoke project access for users. Select a user to manage their permissions.
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* ---- Panel izquierdo: lista de usuarios ---- */}
+        <div className="min-h-[360px] max-h-[60vh] sm:max-h-[70vh] overflow-hidden rounded-lg border">
+          {/* Header sticky */}
+          <div className="sticky top-0 z-10 bg-card border-b p-3 flex items-center justify-between">
+            <h3 className="font-semibold">Users</h3>
             <Button
-              onClick={async () => {
-                await Promise.all([loadACL(), loadProjects()]);
-              }}
               variant="outline"
               size="sm"
-              disabled={refreshing || projRefreshing}
+              onClick={() => {
+                setLoadingUsers(true);
+                setTimeout(() => setLoadingUsers(false), 600);
+              }}
+              disabled={loadingUsers}
+              className="shrink-0"
+              title="Refresh users"
             >
               <RefreshCw
-                className={`h-4 w-4 mr-2 ${
-                  refreshing || projRefreshing ? "animate-spin" : ""
-                }`}
+                className={`h-4 w-4 mr-2 ${loadingUsers ? "animate-spin" : ""}`}
               />
               Refresh
             </Button>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search users..."
-              value={userSearchTerm}
-              onChange={(e) => setUserSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+
+          {/* Buscador */}
+          <div className="px-3 pt-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search users..."
+                className="pl-9"
+              />
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-2 max-h-96 overflow-y-auto">
-          {filteredUsers.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">
-              {userSearchTerm
-                ? "No users found matching your search."
-                : "No users available."}
-            </p>
-          ) : (
-            filteredUsers.map((user) => {
-              const uid = getUserUid(user);
-              const count = getUserProjectIdsByUid(uid).length;
+
+          {/* Lista */}
+          <div className="p-3 space-y-3 overflow-y-auto max-h-[calc(60vh-112px)] sm:max-h-[calc(70vh-112px)]">
+            {filteredUsers.map((u) => {
+              const total = acl[u.id]?.length ?? 0;
               return (
-                <div
-                  key={user.id}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedUser?.id === user.id
-                      ? "bg-primary/10 border-primary"
-                      : "hover:bg-muted/50"
+                <button
+                  key={u.id}
+                  onClick={() => setSelectedUserId(u.id)}
+                  className={`w-full text-left p-3 rounded-lg border hover:bg-accent transition ${
+                    selectedUserId === u.id
+                      ? "ring-2 ring-primary/40 border-primary/40"
+                      : ""
                   }`}
-                  onClick={() => setSelectedUser(user)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {user.email}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{u.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {u.email}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{user.role}</Badge>
-                      <Badge variant="secondary">{count} projects</Badge>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {u.role && <Badge variant="secondary">{u.role}</Badge>}
+                      <Badge variant="outline">
+                        {total} project{total === 1 ? "" : "s"}
+                      </Badge>
                     </div>
                   </div>
-                </div>
+                </button>
               );
-            })
-          )}
-        </CardContent>
-      </Card>
+            })}
 
-      {/* Projects Permissions */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>
-              {selectedUser
-                ? `Projects for ${selectedUser.name}`
-                : "Select a user"}
-            </CardTitle>
-            {selectedUser && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  disabled={allProjectsGranted}
-                >
-                  <CheckSquare className="h-4 w-4 mr-2" />
-                  Select All
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearAll}
-                  disabled={!someProjectsGranted}
-                >
-                  <Square className="h-4 w-4 mr-2" />
-                  Clear All
-                </Button>
+            {filteredUsers.length === 0 && (
+              <div className="text-center text-muted-foreground py-10 text-sm">
+                No users found.
               </div>
             )}
           </div>
-          {selectedUser && (
-            <p className="text-sm text-muted-foreground">
-              {selectedUserProjectIds.length} of {projList.length} projects
-              allowed
-            </p>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-          {!selectedUser ? (
-            <p className="text-center text-muted-foreground py-8">
-              Select a user from the left to manage their project permissions.
-            </p>
-          ) : projList.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">
-              No projects available.
-            </p>
-          ) : (
-            projList.map((project) => {
-              const isGranted =
-                !!selectedUserUid &&
-                isProjectGrantedByUid(selectedUserUid, project.id);
-              return (
-                <div
-                  key={project.id}
-                  className="flex items-center space-x-3 p-3 border rounded-lg"
-                >
-                  <Checkbox
-                    id={`project-${project.id}`}
-                    checked={isGranted}
-                    onCheckedChange={(checked) =>
-                      handleProjectToggle(project.id, checked as boolean)
-                    }
-                  />
-                  <div className="flex-1 min-w-0">
-                    <label
-                      htmlFor={`project-${project.id}`}
-                      className="font-medium cursor-pointer"
+        </div>
+
+        {/* ---- Panel derecho: permisos ---- */}
+        <div className="min-h-[360px] max-h-[60vh] sm:max-h-[70vh] overflow-hidden rounded-lg border">
+          {/* Header (ajustado para mobile) */}
+          <div className="sticky top-0 z-10 bg-card border-b p-3">
+            {selectedUser ? (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold leading-tight truncate">
+                      Projects for {selectedUser.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {selectedUser.email}
+                    </p>
+                  </div>
+
+                  {/* en mobile separamos con mt-2; en desktop queda alineado */}
+                  <div className="flex items-center gap-2 mt-2 sm:mt-0 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={grantAll}
+                      disabled={!selectedUser}
+                      className="whitespace-nowrap"
                     >
-                      {project.name}
-                    </label>
-                    <div className="text-sm text-muted-foreground">
-                      <span className="mr-3">Type: {project.type}</span>
-                      <span>Date: {formatDate(project.created)}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground font-mono">
-                      {project.path}
-                    </div>
+                      Select All
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={revokeAll}
+                      disabled={!selectedUser}
+                      className="whitespace-nowrap"
+                    >
+                      Clear All
+                    </Button>
                   </div>
                 </div>
+
+                <p className="text-xs text-muted-foreground pt-2">
+                  {userProjects.size} of {projects.length} projects allowed
+                </p>
+              </>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Select a user to manage their permissions.
+              </div>
+            )}
+          </div>
+
+          {/* Lista de proyectos */}
+          <div className="p-3 overflow-y-auto max-h-[calc(60vh-72px)] sm:max-h-[calc(70vh-72px)] space-y-2">
+            {projects.map((p) => {
+              const checked = selectedUser ? userProjects.has(p.id) : false;
+              return (
+                <label
+                  key={p.id}
+                  className={`flex items-center justify-between gap-3 p-3 rounded-lg border ${
+                    checked ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{p.name}</div>
+                    {p.type && (
+                      <div className="text-xs text-muted-foreground truncate">
+                        {p.type}
+                      </div>
+                    )}
+                  </div>
+
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(v) => toggleProject(p.id, v)}
+                    disabled={!selectedUser}
+                  />
+                </label>
               );
-            })
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            })}
+
+            {projects.length === 0 && (
+              <div className="text-center text-muted-foreground py-10 text-sm">
+                No projects loaded.
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
+
+export default PermissionsEditor;

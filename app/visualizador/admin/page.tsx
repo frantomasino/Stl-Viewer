@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Toaster } from "@/components/ui/toaster"
@@ -12,219 +12,19 @@ import { ImportExportACL } from "@/components/visualizador/admin/ImportExportACL
 import { FirebaseUserManager } from "@/components/visualizador/admin/FirebaseUserManager"
 import { FirebaseProjectManager } from "@/components/visualizador/admin/FirebaseProjectManager"
 import type { UserRole } from "@/lib/firebase"
-import { getUsers, type FirebaseUser } from "@/lib/firebase"
-import { getProjects } from "@/lib/firebase"
-import {RefreshWeb} from "@/components/visualizador/admin/refreshWeb"
+import { getUsers, type FirebaseUser, getProjects } from "@/lib/firebase"
 import { HomeButton } from "@/components/visualizador/UserLinks"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { getACL, type ACL } from "@/lib/acl"
 
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Alice Johnson",
-    email: "alice@company.com",
-    role: "ADMIN" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Bob Smith",
-    email: "bob@company.com",
-    role: "ADMIN" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Carol Davis",
-    email: "carol@company.com",
-    role: "USER" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "David Wilson",
-    email: "david@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "inactive",
-  },
-  {
-    id: "5",
-    name: "Eve Brown",
-    email: "eve@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "6",
-    name: "Frank Taylor",
-    email: "frank@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "7",
-    name: "Grace Lee",
-    email: "grace@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "8",
-    name: "Henry Martin",
-    email: "henry@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "9",
-    name: "Irene Walker",
-    email: "irene@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "inactive",
-  },
-  {
-    id: "10",
-    name: "Jack Thompson",
-    email: "jack@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "11",
-    name: "Karen Adams",
-    email: "karen@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "12",
-    name: "Liam Perez",
-    email: "liam@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "13",
-    name: "Mia Rivera",
-    email: "mia@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "inactive",
-  },
-  {
-    id: "14",
-    name: "Noah Clark",
-    email: "noah@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "15",
-    name: "Olivia Scott",
-    email: "olivia@company.com",
-    role: "ADMIN" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "16",
-    name: "Paul Nguyen",
-    email: "paul@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "17",
-    name: "Quinn Baker",
-    email: "quinn@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "18",
-    name: "Ruby Patel",
-    email: "ruby@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "inactive",
-  },
-  {
-    id: "19",
-    name: "Samuel Ortiz",
-    email: "samuel@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "20",
-    name: "Tina Chen",
-    email: "tina@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-]
-
-
-const mockProjects: Project[] = [
-  {
-    id: "proj-1",
-    name: "Website Redesign",
-    description: "Complete overhaul of the company website",
-    status: "active",
-    owner: "Carol Davis",
-    created: "2024-01-15",
-  },
-  {
-    id: "proj-2",
-    name: "Mobile App",
-    description: "Native mobile application for iOS and Android",
-    status: "active",
-    owner: "Alice Johnson",
-    created: "2024-02-01",
-  },
-  {
-    id: "proj-3",
-    name: "API Gateway",
-    description: "Centralized API management system",
-    status: "completed",
-    owner: "Bob Smith",
-    created: "2023-12-10",
-  },
-  {
-    id: "proj-4",
-    name: "Analytics Dashboard",
-    description: "Real-time analytics and reporting dashboard",
-    status: "active",
-    owner: "David Wilson",
-    created: "2024-01-20",
-  },
-  {
-    id: "proj-5",
-    name: "User Authentication",
-    description: "Single sign-on and user management system",
-    status: "planning",
-    owner: "Eve Brown",
-    created: "2024-03-01",
-  },
-]
+// shadcn/ui Select (móvil)
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function AdminPanel() {
   const [users, setUsers] = useState<User[]>([])
@@ -232,51 +32,66 @@ export default function AdminPanel() {
   const [acl, setACL] = useState<ACL>({})
   const [loading, setLoading] = useState(true)
 
+  // pestaña compartida por Tabs (desktop) y Select (mobile)
+  const [tab, setTab] = useState<
+    "users" | "projects" | "permissions" | "firebase-users" | "firebase-projects"
+  >("users")
 
- const loadData = async () => {
-      try {
-        const firebaseUsers = await getUsers()
-        const firebaseProjects = await getProjects()
+  const loadData = async () => {
+    try {
+      const firebaseUsers = await getUsers()
+      const firebaseProjects = await getProjects()
 
-        const convertedUsers: User[] = firebaseUsers.map((fbUser: FirebaseUser) => ({
-          id: fbUser.id || "",
-          name: fbUser.name,
-          email: fbUser.email,
-          role: fbUser.role,
-          department: fbUser.department,
-          status: fbUser.status,
-        }))
-      // Asegura que id siempre sea string
-      const convertedProjects: Project[] = firebaseProjects.map((proj: any) => ({
-  id: proj.id ?? "",
-  name: proj.name ?? "",
-  path: proj.path ?? "",
-  type: proj.type ?? "",
-  status: proj.status ?? "",
-  owner: proj.owner ?? "",
-  description: proj.description ?? "",
-  created: proj.created ?? "",
+      const convertedUsers: User[] = firebaseUsers.map((fbUser: FirebaseUser) => ({
+        id: fbUser.id || "",
+        name: fbUser.name,
+        email: fbUser.email,
+        role: fbUser.role as UserRole,
+        department: fbUser.department,
+        status: fbUser.status,
       }))
-        setUsers(convertedUsers)
-        setProjects(convertedProjects)
-        setACL(getACL())
-      } catch (error) {
-        console.error("Error loading Firebase users:", error)
-        setUsers([])
-        setProjects([])
-        setACL(getACL())
-      } finally {
-        setLoading(false)
-      }
-    }
-  const handleACLChange = (newACL: ACL) => {
-    setACL(newACL)
-  }
-  useEffect(() => {
-  
 
+      const convertedProjects: Project[] = firebaseProjects.map((proj: any) => ({
+        id: proj.id ?? "",
+        name: proj.name ?? "",
+        path: proj.path ?? "",
+        type: proj.type ?? "",
+        status: proj.status ?? "",
+        owner: proj.owner ?? "",
+        description: proj.description ?? "",
+        created: proj.created ?? "",
+      }))
+
+      setUsers(convertedUsers)
+      setProjects(convertedProjects)
+      setACL(getACL())
+    } catch (error) {
+      console.error("Error loading Firebase users/projects:", error)
+      setUsers([])
+      setProjects([])
+      setACL(getACL())
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     loadData()
   }, [])
+
+  // Al cambiar de pestaña en mobile: scrolleo arriba y quito foco (cierra select/teclado)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (window.innerWidth >= 640) return // solo mobile
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      const el = document.activeElement as HTMLElement | null
+      el?.blur?.()
+    } catch {}
+  }, [tab])
+
+  const handleACLChange = (newACL: ACL) => setACL(newACL)
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -292,6 +107,7 @@ export default function AdminPanel() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Admin Panel</h1>
@@ -299,18 +115,34 @@ export default function AdminPanel() {
         </div>
         <div className="flex items-center gap-4">
           <HomeButton />
-          {/* <RefreshWeb onRefresh={loadData} loading={loading}/> */}
           <ThemeToggle />
           <ImportExportACL onACLChange={handleACLChange} />
         </div>
       </div>
 
+      {/* Tabs + Select móvil */}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="space-y-6">
+        {/* MOBILE: selector compacto y sticky bajo el header */}
+        <div className="sm:hidden sticky top-2 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-xl">
+          <Select value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+            <SelectTrigger
+              aria-label="Select section"
+              className="h-10 text-sm rounded-xl border-muted-foreground/20 shadow-sm focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <SelectValue placeholder="Section" />
+            </SelectTrigger>
+            <SelectContent align="start" className="rounded-xl">
+              <SelectItem value="users">Users</SelectItem>
+              <SelectItem value="projects">Projects</SelectItem>
+              <SelectItem value="permissions">Permissions</SelectItem>
+              <SelectItem value="firebase-users">User Editor</SelectItem>
+              <SelectItem value="firebase-projects">Projects Editor</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-  
-
-
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        {/* DESKTOP: tabs originales */}
+        <TabsList className="hidden sm:grid w-full grid-cols-5 rounded-xl">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Users
@@ -327,12 +159,13 @@ export default function AdminPanel() {
             <Users className="h-4 w-4" />
             User Editor
           </TabsTrigger>
-                    <TabsTrigger value="firebase-projects" className="flex items-center gap-2">
+          <TabsTrigger value="firebase-projects" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Projects Editor
           </TabsTrigger>
         </TabsList>
 
+        {/* USERS */}
         <TabsContent value="users">
           <Card>
             <CardHeader>
@@ -347,11 +180,14 @@ export default function AdminPanel() {
           </Card>
         </TabsContent>
 
+        {/* PROJECTS */}
         <TabsContent value="projects">
           <Card>
             <CardHeader>
               <CardTitle>Projects Management</CardTitle>
-              <CardDescription>View and manage projects. Click on a project to see who has access.</CardDescription>
+              <CardDescription>
+                View and manage projects. Click on a project to see who has access.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ProjectsTable projects={projects} users={users} acl={acl} />
@@ -359,6 +195,7 @@ export default function AdminPanel() {
           </Card>
         </TabsContent>
 
+        {/* PERMISSIONS */}
         <TabsContent value="permissions">
           <Card>
             <CardHeader>
@@ -368,11 +205,14 @@ export default function AdminPanel() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <PermissionsEditor users={users} projects={projects} acl={acl} onACLChange={handleACLChange} />
+              <div className="overflow-x-hidden sm:overflow-visible">
+                <PermissionsEditor users={users} projects={projects} acl={acl} onACLChange={setACL} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Firestore managers */}
         <TabsContent value="firebase-users">
           <FirebaseUserManager />
         </TabsContent>

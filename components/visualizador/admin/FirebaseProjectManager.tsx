@@ -31,22 +31,21 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, RefreshCw, ExternalLink } from "lucide-react";
-import {db,
+import {
+  db,
   createProject,
   updateProject,
   deleteProject,
   getProjects,
   type FirebaseProject,
 } from "@/lib/firebase";
-import { collection, getDocs, query, where, writeBatch } from "firebase/firestore"
+import { collection, getDocs, query, where, writeBatch } from "firebase/firestore";
 
 export function FirebaseProjectManager() {
   const [projects, setProjects] = useState<FirebaseProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<FirebaseProject | null>(
-    null
-  );
+  const [editingProject, setEditingProject] = useState<FirebaseProject | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
@@ -74,55 +73,54 @@ export function FirebaseProjectManager() {
     }
   };
 
-function normalizeDropboxUrl(raw: string): string {
-  try {
-    let v = raw.trim()
-    if (!/^https?:\/\//i.test(v)) v = "https://" + v // por si pegan sin protocolo
-    const url = new URL(v)
-
-    if (url.hostname === "www.dropbox.com" || url.hostname === "dropbox.com") {
-      url.hostname = "dl.dropboxusercontent.com"
-      // Si SOLO querés cambiar dominio, no toques params.
-      // Si algún día querés forzar descarga, podés hacer:
-      // url.searchParams.set("dl", "1")
+  function normalizeDropboxUrl(raw: string): string {
+    try {
+      let v = raw.trim();
+      if (!/^https?:\/\//i.test(v)) v = "https://" + v;
+      const url = new URL(v);
+      if (url.hostname === "www.dropbox.com" || url.hostname === "dropbox.com") {
+        url.hostname = "dl.dropboxusercontent.com";
+      }
+      return url.toString();
+    } catch {
+      return raw;
     }
-    return url.toString()
-  } catch {
-    // si no es una URL válida, devolvés lo original
-    return raw
   }
-}
 
   useEffect(() => {
     loadProjects();
   }, []);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  try {
-    // 👇 normalizamos por si el usuario no salió del input
-    const normalized = { ...formData, path: normalizeDropboxUrl(formData.path) }
-
-    if (editingProject) {
-      await updateProject(editingProject.id!, normalized)
-      toast({ title: "Success", description: "Project updated successfully" })
-    } else {
-      await createProject(normalized)
-      toast({ title: "Success", description: "Project created successfully" })
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const normalized = { ...formData, path: normalizeDropboxUrl(formData.path) };
+      if (editingProject) {
+        await updateProject(editingProject.id!, normalized);
+        toast({ title: "Success", description: "Project updated successfully" });
+      } else {
+        await createProject(normalized);
+        toast({ title: "Success", description: "Project created successfully" });
+      }
+      setIsDialogOpen(false);
+      setEditingProject(null);
+      setFormData({
+        name: "",
+        description: "",
+        owner: "",
+        path: "",
+        status: "activo",
+        type: "",
+      });
+      loadProjects();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${editingProject ? "update" : "create"} project`,
+        variant: "destructive",
+      });
     }
-    setIsDialogOpen(false)
-    setEditingProject(null)
-    setFormData({ name: "", description: "", owner: "", path: "", status: "activo", type: "" })
-    loadProjects()
-  } catch (error) {
-    toast({
-      title: "Error",
-      description: `Failed to ${editingProject ? "update" : "create"} project`,
-      variant: "destructive",
-    })
-  }
-}
-
+  };
 
   const handleEdit = (project: FirebaseProject) => {
     setEditingProject(project);
@@ -137,40 +135,32 @@ const handleSubmit = async (e: React.FormEvent) => {
     setIsDialogOpen(true);
   };
 
-const handleDelete = async (projectId: string) => {
-  if (!confirm("Are you sure you want to delete this project?")) return
-
-  try {
-    // 1) Borrar memberships asociados al proyecto
-    const q = query(collection(db, "memberships"), where("projectId", "==", projectId))
-    const snap = await getDocs(q)
-
-    if (!snap.empty) {
-      // Firestore limita el batch a 500 ops; hacemos chunking por si acaso
-      const docs = snap.docs
-      for (let i = 0; i < docs.length; i += 500) {
-        const slice = docs.slice(i, i + 500)
-        const batch = writeBatch(db)
-        slice.forEach(d => batch.delete(d.ref))
-        await batch.commit()
+  const handleDelete = async (projectId: string) => {
+    if (!confirm("Are you sure you want to delete this project?")) return;
+    try {
+      const qy = query(collection(db, "memberships"), where("projectId", "==", projectId));
+      const snap = await getDocs(qy);
+      if (!snap.empty) {
+        const docs = snap.docs;
+        for (let i = 0; i < docs.length; i += 500) {
+          const slice = docs.slice(i, i + 500);
+          const batch = writeBatch(db);
+          slice.forEach((d) => batch.delete(d.ref));
+          await batch.commit();
+        }
       }
+      await deleteProject(projectId);
+      toast({ title: "Success", description: "Project and related memberships deleted successfully" });
+      loadProjects();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete project (or memberships)",
+        variant: "destructive",
+      });
+      console.error(error);
     }
-
-    // 2) Borrar el proyecto
-    await deleteProject(projectId)
-
-    toast({ title: "Success", description: "Project and related memberships deleted successfully" })
-    loadProjects() // refrescá la lista
-  } catch (error) {
-    toast({
-      title: "Error",
-      description: "Failed to delete project (or memberships)",
-      variant: "destructive",
-    })
-    console.error(error)
-  }
-}
-
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -200,10 +190,8 @@ const handleDelete = async (projectId: string) => {
       case "pediatría":
         return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200";
       case "traumatología":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
       case "maqueta anatómica":
         return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
-
       default:
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
     }
@@ -211,82 +199,93 @@ const handleDelete = async (projectId: string) => {
 
   const formatDate = (created: any) => {
     if (!created) return "";
-    // Firestore Timestamp
     if (typeof created === "object" && typeof created.toDate === "function") {
       return created.toDate().toLocaleDateString("es-AR");
     }
-    // String o número
     const date = new Date(created);
     return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
-  };
+    };
 
   const filteredProjects = projects.filter((p) => {
-  const q = searchTerm.trim().toLowerCase();
-  if (!q) return true;
-  return (
-    (p.name ?? "").toLowerCase().includes(q) ||
-    (p.description ?? "").toLowerCase().includes(q) ||
-    (p.owner ?? "").toLowerCase().includes(q) ||
-    (p.status ?? "").toLowerCase().includes(q) ||
-    (p.type ?? "").toLowerCase().includes(q)
-  );
-});
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (p.name ?? "").toLowerCase().includes(q) ||
+      (p.description ?? "").toLowerCase().includes(q) ||
+      (p.owner ?? "").toLowerCase().includes(q) ||
+      (p.status ?? "").toLowerCase().includes(q) ||
+      (p.type ?? "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Firebase Project Management</CardTitle>
-            <CardDescription>
-              Manage projects stored in Firebase Firestore
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={loadProjects} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => {
-                    setEditingProject(null);
-                    setFormData({
-                      name: "",
-                      description: "",
-                      owner: "",
-                      path: "",
-                      status: "activo",
-                      type: "",
-                    });
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Project
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl ">
+      {/* ======= ENCABEZADO COMO PEDISTE ======= */}
+      <CardHeader className="space-y-3">
+  {/* En mobile: columna; en desktop: fila */}
+  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+    {/* Título y descripción ocupan todo el ancho en mobile */}
+    <div className="min-w-0">
+      <CardTitle className="text-balance leading-tight">
+        Firebase Project Management
+      </CardTitle>
+      <CardDescription className="text-pretty">
+        Manage projects stored in Firebase Firestore
+      </CardDescription>
+    </div>
+
+    {/* Acciones: en mobile van ABAJO, a todo el ancho, alineadas a la derecha.
+        En desktop quedan a la derecha como siempre */}
+    <div className="flex items-center gap-2 sm:flex-nowrap w-full sm:w-auto justify-end">
+      <Button
+        onClick={loadProjects}
+        variant="outline"
+        size="sm"
+        className="shrink-0"
+      >
+        <RefreshCw className="h-4 w-4 mr-2" />
+        Refresh
+      </Button>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button
+            className="shrink-0"
+            onClick={() => {
+              setEditingProject(null);
+              setFormData({
+                name: "",
+                description: "",
+                owner: "",
+                path: "",
+                status: "activo",
+                type: "",
+              });
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Project
+          </Button>
+        </DialogTrigger>
+
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
                     {editingProject ? "Edit Project" : "Add New Project"}
                   </DialogTitle>
                   <DialogDescription>
-                    {editingProject
-                      ? "Update project information"
-                      : "Create a new project in Firebase"}
+                    {editingProject ? "Update project information" : "Create a new project in Firebase"}
                   </DialogDescription>
                 </DialogHeader>
+
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Name</Label>
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         required
                       />
                     </div>
@@ -295,52 +294,46 @@ const handleDelete = async (projectId: string) => {
                       <Input
                         id="owner"
                         value={formData.owner}
-                        onChange={(e) =>
-                          setFormData({ ...formData, owner: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
                         required
                       />
                     </div>
                   </div>
+
                   <div>
                     <Label htmlFor="description">Description</Label>
                     <Textarea
                       id="description"
                       value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       required
                     />
                   </div>
+
                   <div>
                     <Label htmlFor="path">Path (URL)</Label>
                     <Input
-  id="path"
-  type="url"
-  value={formData.path}
-  onChange={(e) => setFormData({ ...formData, path: e.target.value })}
-  onBlur={(e) => {
-    const fixed = normalizeDropboxUrl(e.target.value)
-    if (fixed !== e.target.value) {
-      setFormData((p) => ({ ...p, path: fixed }))
-    }
-  }}
-  placeholder="https://..."
-  required
-/>
+                      id="path"
+                      type="url"
+                      value={formData.path}
+                      onChange={(e) => setFormData({ ...formData, path: e.target.value })}
+                      onBlur={(e) => {
+                        const fixed = normalizeDropboxUrl(e.target.value);
+                        if (fixed !== e.target.value) {
+                          setFormData((p) => ({ ...p, path: fixed }));
+                        }
+                      }}
+                      placeholder="https://..."
+                      required
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="status">Status</Label>
                       <Select
                         value={formData.status}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, status: value })
-                        }
+                        onValueChange={(value) => setFormData({ ...formData, status: value })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -350,7 +343,6 @@ const handleDelete = async (projectId: string) => {
                           <SelectItem value="Inactivo">Inactivo</SelectItem>
                           <SelectItem value="En progreso">En progreso</SelectItem>
                           <SelectItem value="Completado">Completado</SelectItem>
-
                         </SelectContent>
                       </Select>
                     </div>
@@ -358,34 +350,25 @@ const handleDelete = async (projectId: string) => {
                       <Label htmlFor="type">Type</Label>
                       <Select
                         value={formData.type}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, type: value })
-                        }
+                        onValueChange={(value) => setFormData({ ...formData, type: value })}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Cardiología">
-                            Cardiología
-                          </SelectItem>
-                          <SelectItem value="Neurocirugía">
-                            Neurocirugía
-                          </SelectItem>
+                          <SelectItem value="Cardiología">Cardiología</SelectItem>
+                          <SelectItem value="Neurocirugía">Neurocirugía</SelectItem>
                           <SelectItem value="Neurología">Neurología</SelectItem>
                           <SelectItem value="Oncología">Oncología</SelectItem>
                           <SelectItem value="Pediatría">Pediatría</SelectItem>
-                          <SelectItem value="Traumatología">
-                            Traumatología
-                          </SelectItem>
-                                                    <SelectItem value="Maqueta anatómica">
-                            Maqueta anatómica
-                          </SelectItem>
+                          <SelectItem value="Traumatología">Traumatología</SelectItem>
+                          <SelectItem value="Maqueta anatómica">Maqueta anatómica</SelectItem>
                           <SelectItem value="Otro">Otro</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
+
                   <DialogFooter>
                     <Button type="submit">
                       {editingProject ? "Update Project" : "Create Project"}
@@ -397,97 +380,78 @@ const handleDelete = async (projectId: string) => {
           </div>
         </div>
       </CardHeader>
-      
-{/* 🔎 Search bar */}
-<div className="max-w-2xl w-full mx-auto px-4">
-  <div className="relative mb-6">
-    {/* Si querés el ícono: */}
-    {/* <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" /> */}
-    <Input
-      placeholder="Buscar proyectos por nombre, descripción, owner, estado o tipo…"
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      // className="pl-10" // <- descomentar si usás el ícono
-    />
-  </div>
-</div>
-      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1"> 
-      
-      <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredProjects.map((project) => (
-              <div
-                key={project.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-medium">{project.name}</h3>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${getStatusColor(
-                        project.status
-                      )}`}
-                    >
-                      {project.status}
-                    </span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${getTypeColor(
-                        project.type
-                      )}`}
-                    >
-                      {project.type}
-                    </span>
+
+      {/* 🔎 Search bar */}
+      <div className="max-w-2xl w-full mx-auto px-4">
+        <div className="relative mb-6">
+          <Input
+            placeholder="Buscar proyectos por nombre, descripción, owner, estado o tipo…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                      <h3 className="font-medium truncate">{project.name}</h3>
+                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(project.status)}`}>
+                        {project.status}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(project.type)}`}>
+                        {project.type}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1 break-words">
+                      {project.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Owner: {project.owner} • Created: {formatDate(project.created)}
+                    </p>
+                    {project.path && (
+                      <a
+                        href={project.path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 mt-1"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        View Project
+                      </a>
+                    )}
                   </div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {project.description}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Owner: {project.owner} • Created:{" "}
-                    {formatDate(project.created)}
-                  </p>
-                  {project.path && (
-                    <a
-                      href={project.path}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 mt-1"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      View Project
-                    </a>
-                  )}
+
+                  <div className="flex gap-2 shrink-0 pl-3">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(project)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(project.id!)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(project)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(project.id!)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+              ))}
+              {filteredProjects.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No projects found. Add your first project to get started.
                 </div>
-              </div>
-            ))}
-            {filteredProjects.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No projects found. Add your first project to get started.
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
+              )}
+            </div>
+          )}
+        </CardContent>
       </div>
     </Card>
   );

@@ -1,4 +1,3 @@
-// app/admin/layout.tsx
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
