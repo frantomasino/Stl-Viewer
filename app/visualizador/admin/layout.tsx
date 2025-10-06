@@ -27,7 +27,9 @@ export default function AdminLayout({
           enableSystem
           disableTransitionOnChange
         >
-           <AdminGuardClient>{children}</AdminGuardClient>
+           <AdminGuardClient>         
+              {children}
+            </AdminGuardClient>
         </ThemeProvider>
       </Suspense>
     </div>

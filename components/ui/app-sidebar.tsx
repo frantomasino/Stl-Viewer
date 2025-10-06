@@ -211,6 +211,11 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <div
+      className="p-4 text-right text-xs text-gray-500 border-t border-gray-200">
+         V2.2.7
+      </div>
+     
     </SidebarRoot>
   );
 }

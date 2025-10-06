@@ -308,7 +308,8 @@ export const ensureUserDoc = async (): Promise<void> => {
         status: "active",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-
+        acceptedTerms: false,
+        acceptedTermsAt: null,
       },
       { merge: true }
     );
@@ -320,6 +321,9 @@ export const ensureUserDoc = async (): Promise<void> => {
     if (curr?.uid == null) patch.uid = u.uid;
     if (curr?.email == null && u.email) patch.email = u.email;
     if (curr?.name == null && u.displayName) patch.name = u.displayName;
+     if (typeof curr?.acceptedTerms === "undefined") patch.acceptedTerms = false;
+    if (typeof curr?.acceptedTermsAt === "undefined") patch.acceptedTermsAt = null;
+
     await setDoc(ref, patch, { merge: true });
   }
 };
