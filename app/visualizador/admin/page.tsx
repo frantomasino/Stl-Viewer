@@ -8,7 +8,6 @@ import { Users, FolderOpen, Shield } from "lucide-react"
 import { UsersTable, type User, type Project } from "@/components/visualizador/admin/UsersTable"
 import { ProjectsTable } from "@/components/visualizador/admin/ProjectsTable"
 import { PermissionsEditor } from "@/components/visualizador/admin/PermissionsEditor"
-import { ImportExportACL } from "@/components/visualizador/admin/ImportExportACL"
 import { FirebaseUserManager } from "@/components/visualizador/admin/FirebaseUserManager"
 import { FirebaseProjectManager } from "@/components/visualizador/admin/FirebaseProjectManager"
 import type { UserRole } from "@/lib/firebase"
@@ -17,219 +16,11 @@ import { getProjects } from "@/lib/firebase"
 import {RefreshWeb} from "@/components/visualizador/admin/refreshWeb"
 import { HomeButton } from "@/components/visualizador/UserLinks"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { getACL, type ACL } from "@/lib/acl"
 
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Alice Johnson",
-    email: "alice@company.com",
-    role: "ADMIN" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Bob Smith",
-    email: "bob@company.com",
-    role: "ADMIN" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Carol Davis",
-    email: "carol@company.com",
-    role: "USER" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "David Wilson",
-    email: "david@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "inactive",
-  },
-  {
-    id: "5",
-    name: "Eve Brown",
-    email: "eve@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "6",
-    name: "Frank Taylor",
-    email: "frank@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "7",
-    name: "Grace Lee",
-    email: "grace@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "8",
-    name: "Henry Martin",
-    email: "henry@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "9",
-    name: "Irene Walker",
-    email: "irene@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "inactive",
-  },
-  {
-    id: "10",
-    name: "Jack Thompson",
-    email: "jack@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "11",
-    name: "Karen Adams",
-    email: "karen@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "12",
-    name: "Liam Perez",
-    email: "liam@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "13",
-    name: "Mia Rivera",
-    email: "mia@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "inactive",
-  },
-  {
-    id: "14",
-    name: "Noah Clark",
-    email: "noah@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "15",
-    name: "Olivia Scott",
-    email: "olivia@company.com",
-    role: "ADMIN" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "16",
-    name: "Paul Nguyen",
-    email: "paul@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "active",
-  },
-  {
-    id: "17",
-    name: "Quinn Baker",
-    email: "quinn@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-  {
-    id: "18",
-    name: "Ruby Patel",
-    email: "ruby@company.com",
-    role: "USER" as UserRole,
-    department: "Engineering",
-    status: "inactive",
-  },
-  {
-    id: "19",
-    name: "Samuel Ortiz",
-    email: "samuel@company.com",
-    role: "USER" as UserRole,
-    department: "Product",
-    status: "active",
-  },
-  {
-    id: "20",
-    name: "Tina Chen",
-    email: "tina@company.com",
-    role: "TRIAL" as UserRole,
-    department: "Design",
-    status: "active",
-  },
-]
-
-
-const mockProjects: Project[] = [
-  {
-    id: "proj-1",
-    name: "Website Redesign",
-    description: "Complete overhaul of the company website",
-    status: "active",
-    owner: "Carol Davis",
-    created: "2024-01-15",
-  },
-  {
-    id: "proj-2",
-    name: "Mobile App",
-    description: "Native mobile application for iOS and Android",
-    status: "active",
-    owner: "Alice Johnson",
-    created: "2024-02-01",
-  },
-  {
-    id: "proj-3",
-    name: "API Gateway",
-    description: "Centralized API management system",
-    status: "completed",
-    owner: "Bob Smith",
-    created: "2023-12-10",
-  },
-  {
-    id: "proj-4",
-    name: "Analytics Dashboard",
-    description: "Real-time analytics and reporting dashboard",
-    status: "active",
-    owner: "David Wilson",
-    created: "2024-01-20",
-  },
-  {
-    id: "proj-5",
-    name: "User Authentication",
-    description: "Single sign-on and user management system",
-    status: "planning",
-    owner: "Eve Brown",
-    created: "2024-03-01",
-  },
-]
 
 export default function AdminPanel() {
   const [users, setUsers] = useState<User[]>([])
   const [projects, setProjects] = useState<Project[]>([])
-  const [acl, setACL] = useState<ACL>({})
   const [loading, setLoading] = useState(true)
 
 
@@ -259,19 +50,15 @@ export default function AdminPanel() {
       }))
         setUsers(convertedUsers)
         setProjects(convertedProjects)
-        setACL(getACL())
       } catch (error) {
         console.error("Error loading Firebase users:", error)
         setUsers([])
         setProjects([])
-        setACL(getACL())
       } finally {
         setLoading(false)
       }
     }
-  const handleACLChange = (newACL: ACL) => {
-    setACL(newACL)
-  }
+
   useEffect(() => {
   
 
@@ -301,7 +88,6 @@ export default function AdminPanel() {
           <HomeButton />
           {/* <RefreshWeb onRefresh={loadData} loading={loading}/> */}
           <ThemeToggle />
-          <ImportExportACL onACLChange={handleACLChange} />
         </div>
       </div>
 
@@ -342,7 +128,7 @@ export default function AdminPanel() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <UsersTable users={users} projects={projects} acl={acl} />
+              <UsersTable users={users} projects={projects}  />
             </CardContent>
           </Card>
         </TabsContent>
@@ -354,7 +140,7 @@ export default function AdminPanel() {
               <CardDescription>View and manage projects. Click on a project to see who has access.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ProjectsTable projects={projects} users={users} acl={acl} />
+              <ProjectsTable projects={projects} users={users}  />
             </CardContent>
           </Card>
         </TabsContent>
@@ -368,7 +154,7 @@ export default function AdminPanel() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <PermissionsEditor users={users} projects={projects} acl={acl} onACLChange={handleACLChange} />
+              <PermissionsEditor users={users} projects={projects} />
             </CardContent>
           </Card>
         </TabsContent>
