@@ -32,7 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, RefreshCw, Search } from "lucide-react";
 import {
-  createUser,
+  // createUser,
   updateUser,
   deleteUser,
   getUsers,
@@ -62,7 +62,7 @@ export function FirebaseUserManager() {
     try {
       setLoading(true);
       const fetchedUsers = await getUsers();
-      console.log("Usuarios traídos de Firebase:", fetchedUsers); // <-- Agrega esta línea
+      // console.log("Usuarios traídos de Firebase:", fetchedUsers); // <-- Agrega esta línea
       setUsers(fetchedUsers);
     } catch (error) {
       toast({
@@ -89,7 +89,7 @@ export function FirebaseUserManager() {
           description: "User updated successfully",
         });
       } else {
-        await createUser(formData);
+        // await createUser(formData);
         toast({
           title: "Success",
           description: "User created successfully",

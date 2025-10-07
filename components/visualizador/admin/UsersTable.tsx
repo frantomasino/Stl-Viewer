@@ -22,7 +22,6 @@ import {
 import { Search, Eye } from "lucide-react";
 import { UserRoleBadge } from "./UserRoleSelector";
 import type { UserRole } from "@/lib/firebase";
-import type { ACL } from "@/lib/acl";
 
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -52,10 +51,9 @@ export interface Project {
 interface UsersTableProps {
   users: User[];
   projects: Project[];
-  acl: ACL;
 }
 
-export function UsersTable({ users, projects, acl }: UsersTableProps) {
+export function UsersTable({ users, projects }: UsersTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userList, setUserList] = useState<User[]>(users); // seguirás renderizando tu misma tabla, pero con userList
@@ -82,14 +80,7 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
   );
 
   // ⚠️ Mantengo tus helpers basados en ACL (fallback)
-  const getUserProjectsCount = (userId: string): number => {
-    return acl[userId]?.length || 0;
-  };
 
-  const getUserProjects = (userId: string): Project[] => {
-    const userProjectIds = acl[userId] || [];
-    return projects.filter((project) => userProjectIds.includes(project.id));
-  };
 
   const loadUsers = async () => {
     setRefreshing(true);
