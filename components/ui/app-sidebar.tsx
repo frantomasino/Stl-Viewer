@@ -8,6 +8,8 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
 import { BrandLogo } from "@/components/visualizador/brandLogo";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 import {
   AlertDialog,
@@ -35,18 +37,17 @@ interface AppSidebarProps {
   onModelSelect: (modelName: string) => void;
   user?: any;
   handleLogout?: () => void;
-  failedProject?: string | null; 
+  failedProject?: string | null;
 }
 
-
-  const formatDate = (created: any) => {
-    if (!created) return ""
-    if (typeof created === "object" && typeof created.toDate === "function") {
-      return created.toDate().toLocaleDateString("es-AR")
-    }
-    const date = new Date(created)
-    return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR")
+const formatDate = (created: any) => {
+  if (!created) return "";
+  if (typeof created === "object" && typeof created.toDate === "function") {
+    return created.toDate().toLocaleDateString("es-AR");
   }
+  const date = new Date(created);
+  return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
+};
 
 /** Acordeón con animación de altura */
 function AccordionSection({
@@ -118,79 +119,105 @@ export function AppSidebar({
   // estados de acordeón
   const [openProjects, setOpenProjects] = React.useState(true);
   const [openInstructions, setOpenInstructions] = React.useState(false);
+const [searchTerm, setSearchTerm] = React.useState("");
+
+const norm = (s: unknown) =>
+  String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+
+const visibleProjects = React.useMemo(() => {
+  const q = norm(searchTerm.trim());
+  if (!q) return projects;
+  return projects.filter((p) =>
+    [p.name, p.type, p.path].some((f) => norm(f).includes(q))
+  );
+}, [projects, searchTerm]);
 
   return (
     <SidebarRoot>
       <SidebarContent>
         {/* Logo */}
-{/* Logo */}
-{/* Logo */}
-<div className="p-6 border-b border-gray-200">
-  <div className="flex items-center gap-3">
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <button type="button" className="p-0 bg-transparent border-0">
-          <BrandLogo />
-        </button>
-      </AlertDialogTrigger>
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button type="button" className="p-0 bg-transparent border-0">
+                  <BrandLogo />
+                </button>
+              </AlertDialogTrigger>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Querés salir?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Vas a ser redirigido a la página principal.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction asChild>
-            <Link href="/">Sí, salir</Link>
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </div>
-</div>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Querés salir?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Vas a ser redirigido a la página principal.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction asChild>
+                    <Link href="/">Sí, salir</Link>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
 
         {/* PROYECTOS (acordeón) */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <AccordionSection
-              title="Proyectos"
-              open={openProjects}
-              onToggle={() => setOpenProjects((v) => !v)}
-            >
-              <div className="space-y-2">
-                {projects.map((p, idx) => (
-            <Card
-  key={`${p.path}-${idx}`}
-  className={`p-3 cursor-pointer transition-colors ${
-    selectedModel === p.name
-      ? (failedProject === p.name
-          ? "bg-red-200 border-red-600"       // 👈 seleccionado + falló => ROJO
-          : "bg-cyan-100 border-cyan-300")    // 👈 seleccionado + OK => CELESTE
-      : "bg-white hover:bg-gray-50"
-  }`}
-  onClick={() => onModelSelect(p.name)}
->
+<SidebarGroup>
+  <SidebarGroupContent>
+    <AccordionSection
+      title="Proyectos"
+      open={openProjects}
+      onToggle={() => setOpenProjects((v) => !v)}
+    >
+      {/* 🔎 Buscador */}
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 rounded-md mb-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar por nombre, tipo o ruta…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
 
-                    <div className="font-medium text-gray-800 text-sm">
-                      {p.name}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {p.type} • {formatDate(p.date)}
-                    </div>
-                  </Card>
-                ))}
-                {projects.length === 0 && (
-                  <div className="text-xs text-gray-500 px-1 py-2">
-                    No hay proyectos para mostrar.
-                  </div>
-                )}
-              </div>
-            </AccordionSection>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      {/* Lista filtrada */}
+      <div className="space-y-2">
+        {visibleProjects.map((p, idx) => (
+          <Card
+            key={`${p.path}-${idx}`}
+            className={`p-3 cursor-pointer transition-colors ${
+              selectedModel === p.name
+                ? (failedProject === p.name
+                    ? "bg-red-200 border-red-600"
+                    : "bg-cyan-100 border-cyan-300")
+                : "bg-white hover:bg-gray-50"
+            }`}
+            onClick={() => onModelSelect(p.name)}
+          >
+            <div className="font-medium text-gray-800 text-sm">{p.name}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {p.type} • {formatDate(p.date)}
+            </div>
+          </Card>
+        ))}
+
+        {visibleProjects.length === 0 && (
+          <div className="text-xs text-gray-500 px-1 py-2">
+            No hay proyectos para mostrar.
+          </div>
+        )}
+      </div>
+    </AccordionSection>
+  </SidebarGroupContent>
+</SidebarGroup>
+
 
         {/* INSTRUCCIONES (acordeón) */}
         <SidebarGroup>
@@ -211,11 +238,9 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <div
-      className="p-4 text-right text-xs text-gray-500 border-t border-gray-200">
-         V2.2.7
+      <div className="p-4 text-right text-xs text-gray-500 border-t border-gray-200">
+        V2.2.7
       </div>
-     
     </SidebarRoot>
   );
 }
