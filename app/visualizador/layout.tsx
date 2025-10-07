@@ -4,13 +4,13 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "@/components/theme-provider";
 // import "@/globals.css";
-import TermsConsentGate from "@/components/visualizador/TermsConsentGate";  
+import TermsConsentGate from "@/components/visualizador/TermsConsentGate"; // 👈 importar
 
 
 export const metadata: Metadata = {
   title: "Visualizador | LAMBDA 3D",
   description: "Visualizador 3D de modelos anatómicos",
-  generator: "Full Dev",
+  generator: "v0.dev",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

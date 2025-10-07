@@ -1,7 +1,8 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useMemo } from "react";
+
+import { useState, useEffect ,useMemo} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +46,7 @@ export function FirebaseUserManager() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<FirebaseUser | null>(null);
-
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -61,8 +62,9 @@ export function FirebaseUserManager() {
     try {
       setLoading(true);
       const fetchedUsers = await getUsers();
+      console.log("Usuarios traídos de Firebase:", fetchedUsers); // <-- Agrega esta línea
       setUsers(fetchedUsers);
-    } catch {
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to load users from Firebase",
@@ -82,10 +84,16 @@ export function FirebaseUserManager() {
     try {
       if (editingUser) {
         await updateUser(editingUser.id!, formData);
-        toast({ title: "Success", description: "User updated successfully" });
+        toast({
+          title: "Success",
+          description: "User updated successfully",
+        });
       } else {
         await createUser(formData);
-        toast({ title: "Success", description: "User created successfully" });
+        toast({
+          title: "Success",
+          description: "User created successfully",
+        });
       }
       setIsDialogOpen(false);
       setEditingUser(null);
@@ -97,7 +105,7 @@ export function FirebaseUserManager() {
         status: "active",
       });
       loadUsers();
-    } catch {
+    } catch (error) {
       toast({
         title: "Error",
         description: `Failed to ${editingUser ? "update" : "create"} user`,
@@ -120,11 +128,15 @@ export function FirebaseUserManager() {
 
   const handleDelete = async (userId: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
+
     try {
       await deleteUser(userId);
-      toast({ title: "Success", description: "User deleted successfully" });
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
       loadUsers();
-    } catch {
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to delete user",
@@ -132,66 +144,50 @@ export function FirebaseUserManager() {
       });
     }
   };
+const norm = (s: unknown) =>
+  (String(s ?? ""))
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
 
-  // búsqueda normalizada (sin tildes)
-  const norm = (s: unknown) =>
-    String(s ?? "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "");
+const filteredUsers = useMemo(() => {
+  const q = norm(searchTerm.trim());
+  if (!q) return users; // si no hay búsqueda, devuelve todo
+  return users.filter((u) =>
+    [u.name, u.email, u.department, u.role, u.status].some((field) =>
+      norm(field).includes(q)
+    )
+  );
+}, [users, searchTerm]);
 
-  const filteredUsers = useMemo(() => {
-    const q = norm(searchTerm.trim());
-    if (!q) return users;
-    return users.filter((u) =>
-      [u.name, u.email, u.department, u.role, u.status].some((field) =>
-        norm(field).includes(q)
-      )
-    );
-  }, [users, searchTerm]);
 
   return (
     <Card>
-      {/* ===== Header adaptable a móvil ===== */}
-      <CardHeader className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="text-balance leading-tight">
-              Firebase User Management
-            </CardTitle>
-            <CardDescription className="text-pretty">
+      <CardHeader>
+        <div className="flex items-center justify-between ">
+          <div>
+            <CardTitle>Firebase User Management</CardTitle>
+            <CardDescription>
               Manage users stored in Firebase Firestore
             </CardDescription>
           </div>
-
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end">
-            <Button onClick={loadUsers} variant="outline" size="sm" className="shrink-0">
+          <div className="flex gap-2">
+            <Button onClick={loadUsers} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                {/* Si querés volver a habilitar "Add User", descomentá: 
-                <Button
-                  className="shrink-0"
+                {/* <Button
                   onClick={() => {
-                    setEditingUser(null);
-                    setFormData({
-                      name: "",
-                      email: "",
-                      role: "USER",
-                      department: "",
-                      status: "active",
-                    });
+                    setEditingUser(null)
+                    setFormData({ name: "", email: "", role: "USER", department: "", status: "active" })
                   }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add User
                 </Button> */}
-                <span />
               </DialogTrigger>
-
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
@@ -203,7 +199,6 @@ export function FirebaseUserManager() {
                       : "Create a new user in Firebase"}
                   </DialogDescription>
                 </DialogHeader>
-
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <Label htmlFor="name">Name</Label>
@@ -216,7 +211,6 @@ export function FirebaseUserManager() {
                       required
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -229,7 +223,6 @@ export function FirebaseUserManager() {
                       required
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="role">Role</Label>
                     <UserRoleSelector
@@ -237,7 +230,6 @@ export function FirebaseUserManager() {
                       onChange={(role) => setFormData({ ...formData, role })}
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="department">Department</Label>
                     <Input
@@ -249,7 +241,6 @@ export function FirebaseUserManager() {
                       required
                     />
                   </div>
-
                   <div>
                     <Label htmlFor="status">Status</Label>
                     <Select
@@ -267,7 +258,6 @@ export function FirebaseUserManager() {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <DialogFooter>
                     <Button type="submit">
                       {editingUser ? "Update User" : "Create User"}
@@ -279,26 +269,25 @@ export function FirebaseUserManager() {
           </div>
         </div>
       </CardHeader>
-
-      {/* ===== Buscador ===== */}
       <div className="max-w-2xl w-full mx-auto px-4">
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search users by name, email, or department..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
+<div className="relative  mb-6  ">
+  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+  <Input
+    placeholder="Search users by name, email, or department..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="pl-10"
+  />
+</div>
+</div>
 
-      {/* ===== Lista ===== */}
-      <div className="w-full max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+      <div className=" w-full max-h-[60vh] overflow-y-auto pr-1 space-y-2">
+               
         <CardContent>
+
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -307,9 +296,9 @@ export function FirebaseUserManager() {
                   key={user.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="font-medium truncate">{user.name}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-medium">{user.name}</h3>
                       <UserRoleBadge role={user.role} />
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${
@@ -321,12 +310,11 @@ export function FirebaseUserManager() {
                         {user.status}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="text-sm text-muted-foreground">
                       {user.email} • {user.department}
                     </p>
                   </div>
-
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -344,7 +332,6 @@ export function FirebaseUserManager() {
                   </div>
                 </div>
               ))}
-
               {filteredUsers.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No users found. Add your first user to get started.
