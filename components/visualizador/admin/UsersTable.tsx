@@ -24,7 +24,7 @@ import { UserRoleBadge } from "./UserRoleSelector";
 import type { UserRole } from "@/lib/firebase";
 
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, onSnapshot, documentId } from "firebase/firestore";
 
 export interface User {
   id: string;
@@ -56,9 +56,9 @@ interface UsersTableProps {
 export function UsersTable({ users, projects }: UsersTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [userList, setUserList] = useState<User[]>(users); // seguirás renderizando tu misma tabla, pero con userList
+  const [userList, setUserList] = useState<User[]>([]); // seguirás renderizando tu misma tabla, pero con userList
   const [refreshing, setRefreshing] = useState(false);
-
+const [hydrated, setHydrated] = useState(false);
   // 🔹 Conteo real desde Firestore: userId -> cantidad de memberships
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [countsLoading, setCountsLoading] = useState(false);
@@ -83,6 +83,7 @@ export function UsersTable({ users, projects }: UsersTableProps) {
 
 
   const loadUsers = async () => {
+    return
     setRefreshing(true);
     try {
       const snap = await getDocs(collection(db, "users"));
@@ -107,9 +108,14 @@ export function UsersTable({ users, projects }: UsersTableProps) {
     return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
   };
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+useEffect(() => {
+  const unsub = onSnapshot(collection(db, "users"), (snap) => {
+    const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as User[];
+    setUserList(list);
+    setHydrated(true);
+  });
+  return () => unsub();
+}, []);
 
   useEffect(() => {
     const debounced = () => {
@@ -209,7 +215,7 @@ export function UsersTable({ users, projects }: UsersTableProps) {
       alive = false;
     };
   }, [selectedUser?.id, projects]);
-
+  const roleUp = (r: unknown) => String(r ?? "").toUpperCase();
   return (
     <>
       <div className="space-y-4">
@@ -260,7 +266,7 @@ export function UsersTable({ users, projects }: UsersTableProps) {
                       user.role === "TRIAL" ? (
                         <UserRoleBadge role={user.role as UserRole} />
                       ) : (
-                        <Badge variant="outline">{user.role}</Badge>
+                        <Badge variant="outline">{roleUp(user.role)}</Badge>
                       )}
                     </TableCell>
                     <TableCell>{user.department || "N/A"}</TableCell>

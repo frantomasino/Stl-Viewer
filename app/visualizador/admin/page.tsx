@@ -10,60 +10,81 @@ import { ProjectsTable } from "@/components/visualizador/admin/ProjectsTable"
 import { PermissionsEditor } from "@/components/visualizador/admin/PermissionsEditor"
 import { FirebaseUserManager } from "@/components/visualizador/admin/FirebaseUserManager"
 import { FirebaseProjectManager } from "@/components/visualizador/admin/FirebaseProjectManager"
-import type { UserRole } from "@/lib/firebase"
-import { getUsers, type FirebaseUser } from "@/lib/firebase"
-import { getProjects } from "@/lib/firebase"
-import {RefreshWeb} from "@/components/visualizador/admin/refreshWeb"
+import type { FirebaseUser } from "@/lib/firebase"
+import { getUsers, getProjects } from "@/lib/firebase"
 import { HomeButton } from "@/components/visualizador/UserLinks"
 import { ThemeToggle } from "@/components/ThemeToggle"
 
+// 🟢 Selector móvil (traído de page1.tsx)
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function AdminPanel() {
   const [users, setUsers] = useState<User[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
+  // 🟢 Estado compartido para Tabs (desktop) y Select (mobile)
+  const [tab, setTab] = useState<
+    "users" | "projects" | "permissions" | "firebase-users" | "firebase-projects"
+  >("users")
 
- const loadData = async () => {
-      try {
-        const firebaseUsers = await getUsers()
-        const firebaseProjects = await getProjects()
+  const loadData = async () => {
+    try {
+      const firebaseUsers = await getUsers()
+      const firebaseProjects = await getProjects()
 
-        const convertedUsers: User[] = firebaseUsers.map((fbUser: FirebaseUser) => ({
-          id: fbUser.id || "",
-          name: fbUser.name,
-          email: fbUser.email,
-          role: fbUser.role,
-          department: fbUser.department,
-          status: fbUser.status,
-        }))
-      // Asegura que id siempre sea string
-      const convertedProjects: Project[] = firebaseProjects.map((proj: any) => ({
-  id: proj.id ?? "",
-  name: proj.name ?? "",
-  path: proj.path ?? "",
-  type: proj.type ?? "",
-  status: proj.status ?? "",
-  owner: proj.owner ?? "",
-  description: proj.description ?? "",
-  created: proj.created ?? "",
+      const convertedUsers: User[] = (firebaseUsers as FirebaseUser[]).map((fbUser) => ({
+        id: fbUser.id || "",
+        name: fbUser.name,
+        email: fbUser.email,
+        role: fbUser.role as any,
+        department: (fbUser as any).department,
+        status: (fbUser as any).status,
       }))
-        setUsers(convertedUsers)
-        setProjects(convertedProjects)
-      } catch (error) {
-        console.error("Error loading Firebase users:", error)
-        setUsers([])
-        setProjects([])
-      } finally {
-        setLoading(false)
-      }
+
+      const convertedProjects: Project[] = (firebaseProjects as any[]).map((proj) => ({
+        id: proj.id ?? "",
+        name: proj.name ?? "",
+        path: proj.path ?? "",
+        type: proj.type ?? "",
+        status: proj.status ?? "",
+        owner: proj.owner ?? "",
+        description: proj.description ?? "",
+        created: proj.created ?? "",
+      }))
+
+      setUsers(convertedUsers)
+      setProjects(convertedProjects)
+    } catch (error) {
+      console.error("Error loading Firebase users/projects:", error)
+      setUsers([])
+      setProjects([])
+    } finally {
+      setLoading(false)
     }
+  }
 
   useEffect(() => {
-  
-
     loadData()
   }, [])
+
+  // 🟢 UX mobile: al cambiar de pestaña via Select, hago scroll top y quito foco
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (window.innerWidth >= 640) return // solo mobile
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      const el = document.activeElement as HTMLElement | null
+      el?.blur?.()
+    } catch {}
+  }, [tab])
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -79,6 +100,7 @@ export default function AdminPanel() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Admin Panel</h1>
@@ -86,17 +108,32 @@ export default function AdminPanel() {
         </div>
         <div className="flex items-center gap-4">
           <HomeButton />
-          {/* <RefreshWeb onRefresh={loadData} loading={loading}/> */}
           <ThemeToggle />
         </div>
       </div>
 
+      {/* 🟢 MOBILE: selector compacto y sticky bajo el header */}
+      <div className="sm:hidden sticky top-2 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-xl">
+        <Select value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <SelectTrigger
+            aria-label="Select section"
+            className="h-10 text-sm rounded-xl border-muted-foreground/20 shadow-sm focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            <SelectValue placeholder="Section" />
+          </SelectTrigger>
+          <SelectContent align="start" className="rounded-xl">
+            <SelectItem value="users">Users</SelectItem>
+            <SelectItem value="projects">Projects</SelectItem>
+            <SelectItem value="permissions">Permissions</SelectItem>
+            <SelectItem value="firebase-users">User Editor</SelectItem>
+            <SelectItem value="firebase-projects">Projects Editor</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-  
-
-
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+      {/* DESKTOP: tabs originales (controladas por `tab`) */}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="space-y-6">
+        <TabsList className="hidden sm:grid w-full grid-cols-5 rounded-xl">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Users
@@ -113,12 +150,13 @@ export default function AdminPanel() {
             <Users className="h-4 w-4" />
             User Editor
           </TabsTrigger>
-                    <TabsTrigger value="firebase-projects" className="flex items-center gap-2">
+          <TabsTrigger value="firebase-projects" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Projects Editor
           </TabsTrigger>
         </TabsList>
 
+        {/* USERS */}
         <TabsContent value="users">
           <Card>
             <CardHeader>
@@ -128,23 +166,27 @@ export default function AdminPanel() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <UsersTable users={users} projects={projects}  />
+              <UsersTable users={users} projects={projects} />
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* PROJECTS */}
         <TabsContent value="projects">
           <Card>
             <CardHeader>
               <CardTitle>Projects Management</CardTitle>
-              <CardDescription>View and manage projects. Click on a project to see who has access.</CardDescription>
+              <CardDescription>
+                View and manage projects. Click on a project to see who has access.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProjectsTable projects={projects} users={users}  />
+              <ProjectsTable projects={projects} users={users} />
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* PERMISSIONS */}
         <TabsContent value="permissions">
           <Card>
             <CardHeader>
@@ -159,6 +201,7 @@ export default function AdminPanel() {
           </Card>
         </TabsContent>
 
+        {/* Firestore managers */}
         <TabsContent value="firebase-users">
           <FirebaseUserManager />
         </TabsContent>

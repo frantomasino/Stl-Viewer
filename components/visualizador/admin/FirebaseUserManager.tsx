@@ -62,7 +62,6 @@ export function FirebaseUserManager() {
     try {
       setLoading(true);
       const fetchedUsers = await getUsers();
-      // console.log("Usuarios traídos de Firebase:", fetchedUsers); // <-- Agrega esta línea
       setUsers(fetchedUsers);
     } catch (error) {
       toast({
@@ -144,49 +143,48 @@ export function FirebaseUserManager() {
       });
     }
   };
-const norm = (s: unknown) =>
-  (String(s ?? ""))
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
 
-const filteredUsers = useMemo(() => {
-  const q = norm(searchTerm.trim());
-  if (!q) return users; // si no hay búsqueda, devuelve todo
-  return users.filter((u) =>
-    [u.name, u.email, u.department, u.role, u.status].some((field) =>
-      norm(field).includes(q)
-    )
-  );
-}, [users, searchTerm]);
+  // búsqueda normalizada (sin tildes) – mantiene la lógica original y añade robustez del "1"
+  const norm = (s: unknown) =>
+    String(s ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "");
 
+  const filteredUsers = useMemo(() => {
+    const q = norm(searchTerm.trim());
+    if (!q) return users; // si no hay búsqueda, devuelve todo
+    return users.filter((u) =>
+      [u.name, u.email, u.department, u.role, u.status].some((field) =>
+        norm(field).includes(q)
+      )
+    );
+  }, [users, searchTerm]);
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between ">
-          <div>
-            <CardTitle>Firebase User Management</CardTitle>
-            <CardDescription>
+      {/* ===== Header adaptable a móvil (tomado del "1", sin cambiar estilos visuales) ===== */}
+      <CardHeader className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="text-balance leading-tight">
+              Firebase User Management
+            </CardTitle>
+            <CardDescription className="text-pretty">
               Manage users stored in Firebase Firestore
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={loadUsers} variant="outline" size="sm">
+
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end">
+            <Button onClick={loadUsers} variant="outline" size="sm" className="shrink-0">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                {/* <Button
-                  onClick={() => {
-                    setEditingUser(null)
-                    setFormData({ name: "", email: "", role: "USER", department: "", status: "active" })
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add User
-                </Button> */}
+                {/* Mantengo deshabilitado Add User como en el base para no romper nada */}
+                <span />
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -269,22 +267,23 @@ const filteredUsers = useMemo(() => {
           </div>
         </div>
       </CardHeader>
+
+      {/* ===== Buscador ===== */}
       <div className="max-w-2xl w-full mx-auto px-4">
-<div className="relative  mb-6  ">
-  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-  <Input
-    placeholder="Search users by name, email, or department..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    className="pl-10"
-  />
-</div>
-</div>
+        <div className="relative  mb-6  ">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search users by name, email, or department..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
 
+      {/* ===== Lista ===== */}
       <div className=" w-full max-h-[60vh] overflow-y-auto pr-1 space-y-2">
-               
         <CardContent>
-
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -296,9 +295,9 @@ const filteredUsers = useMemo(() => {
                   key={user.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-medium">{user.name}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h3 className="font-medium truncate">{user.name}</h3>
                       <UserRoleBadge role={user.role} />
                       <span
                         className={`text-xs px-2 py-1 rounded-full ${
@@ -310,11 +309,11 @@ const filteredUsers = useMemo(() => {
                         {user.status}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground truncate">
                       {user.email} • {user.department}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
