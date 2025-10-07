@@ -22,10 +22,9 @@ import {
 import { Search, Eye } from "lucide-react";
 import { UserRoleBadge } from "./UserRoleSelector";
 import type { UserRole } from "@/lib/firebase";
-import type { ACL } from "@/lib/acl";
 
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, onSnapshot, documentId } from "firebase/firestore";
 
 export interface User {
   id: string;
@@ -52,15 +51,14 @@ export interface Project {
 interface UsersTableProps {
   users: User[];
   projects: Project[];
-  acl: ACL;
 }
 
-export function UsersTable({ users, projects, acl }: UsersTableProps) {
+export function UsersTable({ users, projects }: UsersTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [userList, setUserList] = useState<User[]>(users); // seguirás renderizando tu misma tabla, pero con userList
+  const [userList, setUserList] = useState<User[]>([]); // seguirás renderizando tu misma tabla, pero con userList
   const [refreshing, setRefreshing] = useState(false);
-
+const [hydrated, setHydrated] = useState(false);
   // 🔹 Conteo real desde Firestore: userId -> cantidad de memberships
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [countsLoading, setCountsLoading] = useState(false);
@@ -82,16 +80,10 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
   );
 
   // ⚠️ Mantengo tus helpers basados en ACL (fallback)
-  const getUserProjectsCount = (userId: string): number => {
-    return acl[userId]?.length || 0;
-  };
 
-  const getUserProjects = (userId: string): Project[] => {
-    const userProjectIds = acl[userId] || [];
-    return projects.filter((project) => userProjectIds.includes(project.id));
-  };
 
   const loadUsers = async () => {
+    return
     setRefreshing(true);
     try {
       const snap = await getDocs(collection(db, "users"));
@@ -116,9 +108,14 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
     return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
   };
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+useEffect(() => {
+  const unsub = onSnapshot(collection(db, "users"), (snap) => {
+    const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as User[];
+    setUserList(list);
+    setHydrated(true);
+  });
+  return () => unsub();
+}, []);
 
   useEffect(() => {
     const debounced = () => {
@@ -218,7 +215,7 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
       alive = false;
     };
   }, [selectedUser?.id, projects]);
-
+  const roleUp = (r: unknown) => String(r ?? "").toUpperCase();
   return (
     <>
       <div className="space-y-4">
@@ -269,7 +266,7 @@ export function UsersTable({ users, projects, acl }: UsersTableProps) {
                       user.role === "TRIAL" ? (
                         <UserRoleBadge role={user.role as UserRole} />
                       ) : (
-                        <Badge variant="outline">{user.role}</Badge>
+                        <Badge variant="outline">{roleUp(user.role)}</Badge>
                       )}
                     </TableCell>
                     <TableCell>{user.department || "N/A"}</TableCell>
