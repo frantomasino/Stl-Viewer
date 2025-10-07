@@ -313,6 +313,7 @@ export const ensureUserDoc = async (): Promise<void> => {
       },
       { merge: true }
     );
+    assignUserToProject(u.uid, "adnCLulIpxl9fH6tT6tq", "viewer")
   } else {
     // Si ya existe, NO toco role ni otros campos manuales
     // (solo actualizo updatedAt y relleno mínimos si faltan)
@@ -326,22 +327,23 @@ export const ensureUserDoc = async (): Promise<void> => {
 
     await setDoc(ref, patch, { merge: true });
   }
+  
 };
 
-// User management functions
-export const createUser = async (userData: Omit<FirebaseUser, "id" | "createdAt" | "updatedAt">) => {
-  try {
-    const docRef = await addDoc(collection(db, "users"), {
-      ...userData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  return docRef.id;
-  } catch (error) {
-    console.error("Error creating user:", error);
-    throw error;
-  }
-};
+// // User management functions
+// export const createUser = async (userData: Omit<FirebaseUser, "id" | "createdAt" | "updatedAt">) => {
+//   try {
+//     const docRef = await addDoc(collection(db, "users"), {
+//       ...userData,
+//       createdAt: new Date(),
+//       updatedAt: new Date(),
+//     });
+//   return docRef.id;
+//   } catch (error) {
+//     console.error("Error creating user:", error);
+//     throw error;
+//   }
+// };
 
 export const updateUser = async (userId: string, userData: Partial<FirebaseUser>) => {
   try {
