@@ -5,6 +5,7 @@ import ClientLayout from "./ClientLayout"
 import { ScrollToTopButton } from "@/components/ScrollToTopButton"
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "LAMBDA 3D",
@@ -52,6 +53,7 @@ export default function RootLayout({
 
         <ClientLayout>{children}</ClientLayout>
         <ScrollToTopButton />
+        <Analytics />
       </body>
     </html>
   )
