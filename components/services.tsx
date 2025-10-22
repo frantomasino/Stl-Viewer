@@ -1,24 +1,25 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { Heart, GraduationCap, Palette, ArrowRight } from "lucide-react"
+import { Heart, Stethoscope,GraduationCap, Palette, ArrowRight } from "lucide-react"
 
 const services = [
-  {
-    icon: Heart,
-    title: "Biomodelos para planificación quirúrgica",
-    description: "Modelos anatómicos precisos para planificar procedimientos con mayor claridad y seguridad.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Maquetas educativas",
-    description: "Piezas didácticas para docentes y estudiantes que facilitan el acercamiento a la ciencia.",
-  },
-  {
-    icon: Palette,
-    title: "Desarrollos 3D personalizados",
-    description: "Simuladores a medida según la necesidad clínica o educativa.",
-  },
+{
+  icon: Stethoscope,
+  title: "Segmentación 3D de imágenes médicas",
+  description: "Reconstrucción anatómica precisa a partir de TC o RM, lista para visualización y uso clínico.",
+},
+{
+  icon: Heart,
+  title: "Biomodelos quirúrgicos impresos",
+  description: "Modelos físicos en 3D que ayudan a planificar cirugías y mejorar los resultados.",
+},
+{
+  icon: GraduationCap,
+  title: "Maquetas educativas",
+  description: "Piezas didácticas para universidades y capacitaciones que facilitan la enseñanza de la anatomía.",
+},
+
 ]
 
 export function Services() {
@@ -27,9 +28,9 @@ export function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-balance">Nuestros Servicios</h2>
-          {/* <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Soluciones especializadas en impresión 3D para el sector salud y educativo
-          </p> */}
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
+En Lambda 3D ofrecemos un servicio integral: desde la segmentación de imágenes médicas hasta la entrega de modelos físicos y digitales para planificación quirúrgica y enseñanza.
+          </p>
         </div>
 
         <div className="hidden lg:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -50,12 +51,7 @@ export function Services() {
                 <CardContent className="flex flex-col flex-1">
                   <CardDescription className="text-base leading-relaxed mb-4">{service.description}</CardDescription>
 
-                  {/* <div className="mt-auto">
-                    <Button variant="ghost" className="p-0 h-auto font-medium text-primary group/btn">
-                      Saber más
-                      <ArrowRight className="h-4 w-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
-                    </Button>
-                  </div> */}
+
                 </CardContent>
               </Card>
             )
