@@ -15,9 +15,8 @@ export function Hero() {
                 <span className="text-primary">educación</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground text-pretty leading-relaxed">
-                Transformamos la manera en que los profesionales de la salud y
-                los educadores abordan sus problemáticas mediante soluciones
-                innovadoras en biomodelos e impresión 3D.
+                Convertimos imágenes médicas en soluciones 3D precisas que
+                mejoran la práctica clínica y educativa.
               </p>
             </div>
 
@@ -27,9 +26,9 @@ export function Hero() {
                 size="lg"
                 className="rounded-2xl px-8 py-4 text-base font-medium group"
               >
-                <a href="#servicios" className="flex items-center gap-2">
-                  Conocé más
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <a href="#contacto" className="flex items-center gap-2">
+                  <Play className="h-4 w-4" />
+                  Contactanos
                 </a>
               </Button>
               <Button
@@ -37,9 +36,9 @@ export function Hero() {
                 size="lg"
                 className="rounded-2xl px-8 py-4 text-base font-medium group bg-transparent"
               >
-                <a href="#contacto" className="flex items-center gap-2">
-                  <Play className="h-4 w-4" />
-                  Contactanos
+                <a href="#servicios" className="flex items-center gap-2">
+                  Ver casos
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </a>
               </Button>
             </div>
@@ -48,21 +47,21 @@ export function Hero() {
           {/* Image/Visual - oculto en mobile */}
           <div className="relative hidden md:block">
             <div className="aspect-[4/3] bg-muted rounded-3xl overflow-hidden">
-            <img
-              src="/img/torax.jpeg"
-              alt="Biomodelo 3D"
-              className="w-full h-full object-cover  "
-              style={{
-                WebkitMaskImage:
-                  "linear-gradient(to right, transparent 0%, black 40%, black 100%)",
-                WebkitMaskRepeat: "no-repeat",
-                WebkitMaskSize: "cover",
-                maskImage:
-                  "linear-gradient(to right, transparent 0%, black 45%, black 100%)",
-                maskRepeat: "no-repeat",
-                maskSize: "cover",
-              }}
-            />
+              <img
+                src="/img/torax.jpeg"
+                alt="Biomodelo 3D"
+                className="w-full h-full object-cover  "
+                style={{
+                  WebkitMaskImage:
+                    "linear-gradient(to right, transparent 0%, black 40%, black 100%)",
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskSize: "cover",
+                  maskImage:
+                    "linear-gradient(to right, transparent 0%, black 45%, black 100%)",
+                  maskRepeat: "no-repeat",
+                  maskSize: "cover",
+                }}
+              />
             </div>
           </div>
         </div>
