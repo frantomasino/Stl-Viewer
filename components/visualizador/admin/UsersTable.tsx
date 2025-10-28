@@ -339,7 +339,7 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="space-y-2  pr-1">
                 {/* 🔹 Muestra el total real (Firestore) si existe; sino fallback ACL */}
                 <h4 className="font-medium">
                   Accessible Projects{" "}
@@ -347,7 +347,7 @@ useEffect(() => {
                     ? " (cargando…)"
                     : ` (${selectedUserProjects.length})`}
                 </h4>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                   {/* 🔹 Lista real desde Firestore si está; si no, fallback ACL */}
                   {!loadingUserProjects && selectedUserProjects.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
