@@ -235,7 +235,7 @@ export function ProjectsTable({ projects, users }: ProjectsTableProps) {
 
           {selectedProject && (
             <div className="mt-6 space-y-6 ">
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-y-auto">
                 <h4 className="font-medium">Project Information</h4>
                 <div className="text-sm text-muted-foreground space-y-1 ">
                   <p>
@@ -257,9 +257,9 @@ export function ProjectsTable({ projects, users }: ProjectsTableProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 ">
                 <h4 className="font-medium">Viewers ({getProjectViewers(selectedProject.id).length})</h4>
-                <div className="space-y-2">
+                <div className="space-y-2 overflow-y-auto max-h-[60vh]">
                   {getProjectViewers(selectedProject.id).length === 0 ? (
                     <p className="text-sm text-muted-foreground">No users have access to this project</p>
                   ) : (
