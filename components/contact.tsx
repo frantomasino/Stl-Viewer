@@ -8,7 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MapPin, Send, Smartphone, Linkedin, MessageSquare } from "lucide-react";
+import {
+  Mail,
+  MapPin,
+  Send,
+  Smartphone,
+  Linkedin,
+  MessageSquare,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -48,7 +55,8 @@ export function Contact() {
 
     try {
       // Prepend del tipo de consulta al mensaje (tu API actual no tiene campo "tipo")
-      const mensajeCompuesto = `[Tipo: ${formData.tipo}] ${formData.mensaje}`.trim();
+      const mensajeCompuesto =
+        `[Tipo: ${formData.tipo}] ${formData.mensaje}`.trim();
 
       await sendContactMessage({
         name: formData.nombre.trim(),
@@ -73,7 +81,28 @@ export function Contact() {
     } finally {
       setLoading(false);
     }
+    try {
+  const res = await fetch("/api/contact/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nombre: formData.nombre.trim(),
+      email: formData.email.trim(),
+      telefono: formData.telefono.trim(),
+      mensaje: formData.mensaje.trim(),
+      tipo: formData.tipo, // ya lo tenés en tu estado
+    }),
+  });
+
+  if (!res.ok) {
+    // No rompemos la UX si falla el mail, solo avisamos en consola
+    console.error("No se pudo enviar el correo (Resend).");
+  }
+} catch (e) {
+  console.error("Fallo de red/Resend:", e);
+}
   };
+  
 
   return (
     <section id="contacto" className="py-24 bg-muted/30">
@@ -82,18 +111,18 @@ export function Contact() {
           <h2 className="text-3xl md:text-4xl font-bold text-balance">
             Contanos tu proyecto
           </h2>
-<p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-  Respondemos dentro de 24&nbsp;h hábiles. Si es urgente, escribinos por{" "}
-  <Link
-    href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20contactarlos%20por%20un%20proyecto%203D."
-    target="_blank"
-    rel="noopener noreferrer"
-    className="inline-flex items-center gap-2 font-medium text-green-600 hover:text-green-700"
-  >
-     WhatsApp
-  </Link>
-</p>
-
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
+            Respondemos dentro de 48&nbsp;hs hábiles. Si es urgente, escribinos
+            por{" "}
+            <Link
+              href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20contactarlos%20por%20un%20proyecto%203D."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-medium text-green-600 hover:text-green-700"
+            >
+              WhatsApp
+            </Link>
+          </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
@@ -150,7 +179,9 @@ export function Contact() {
                     <Label>Tipo de consulta</Label>
                     <Select
                       value={formData.tipo}
-                      onValueChange={(v) => setFormData((p) => ({ ...p, tipo: v }))}
+                      onValueChange={(v) =>
+                        setFormData((p) => ({ ...p, tipo: v }))
+                      }
                     >
                       <SelectTrigger className="rounded-xl">
                         <SelectValue placeholder="Elegí una opción" />
@@ -159,7 +190,9 @@ export function Contact() {
                         <SelectItem value="Biomodelo / Planificación">
                           Biomodelo / Planificación
                         </SelectItem>
-                        <SelectItem value="Impresión 3D">Impresión 3D</SelectItem>
+                        <SelectItem value="Impresión 3D">
+                          Impresión 3D
+                        </SelectItem>
                         <SelectItem value="Académico / Maquetas">
                           Académico / Maquetas
                         </SelectItem>
@@ -190,7 +223,10 @@ export function Contact() {
                     checked={accepted}
                     onCheckedChange={(v) => setAccepted(Boolean(v))}
                   />
-                  <label htmlFor="consent" className="text-sm text-muted-foreground">
+                  <label
+                    htmlFor="consent"
+                    className="text-sm text-muted-foreground"
+                  >
                     Acepto la{" "}
                     <Link href="/politica-privacidad" className="underline">
                       Política de Privacidad
@@ -213,7 +249,11 @@ export function Contact() {
                     {loading ? "Enviando..." : "Enviar consulta"}
                   </Button>
 
-                  <Button asChild variant="outline" className="rounded-2xl py-3">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="rounded-2xl py-3"
+                  >
                     <Link
                       href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20contactarlos%20por%20un%20proyecto%203D."
                       target="_blank"
@@ -242,7 +282,9 @@ export function Contact() {
           {/* Contact Information */}
           <div className="space-y-8">
             <div className="space-y-6">
-              <h3 className="text-2xl font-semibold">Información de contacto</h3>
+              <h3 className="text-2xl font-semibold">
+                Información de contacto
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -298,7 +340,9 @@ export function Contact() {
                   </div>
                   <div>
                     <p className="font-medium">Ubicación</p>
-                    <p className="text-muted-foreground">Chivilcoy, Argentina</p>
+                    <p className="text-muted-foreground">
+                      Chivilcoy, Argentina
+                    </p>
                   </div>
                 </div>
               </div>
@@ -307,10 +351,13 @@ export function Contact() {
             {/* Additional Info */}
             <Card className="border-0 bg-primary/5">
               <CardContent className="p-6">
-                <h4 className="font-semibold mb-2">¿Tenés un proyecto en mente?</h4>
+                <h4 className="font-semibold mb-2">
+                  ¿Tenés un proyecto en mente?
+                </h4>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Transformamos imágenes médicas en modelos 3D para planificación y docencia.
-                  Contanos tu objetivo y material disponible y te asesoramos sin costo.
+                  Transformamos imágenes médicas en modelos 3D para
+                  planificación y docencia. Contanos tu objetivo y material
+                  disponible y te asesoramos sin costo.
                 </p>
               </CardContent>
             </Card>

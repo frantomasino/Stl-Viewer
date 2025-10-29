@@ -313,7 +313,28 @@ export const ensureUserDoc = async (): Promise<void> => {
       },
       { merge: true }
     );
-    assignUserToProject(u.uid, "adnCLulIpxl9fH6tT6tq", "viewer")
+    // assignUserToProject(u.uid, "adnCLulIpxl9fH6tT6tq", "viewer")
+
+    // 🔔 Disparar welcome mail SIN bloquear la UX
+    try {
+      // llamamos al API Route (server) que usa Resend
+      await fetch("/api/welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: u.email,
+          name: u.displayName ?? "",
+        }),
+      });
+
+      // guardamos el sello
+      await updateDoc(ref, { welcomeSentAt: serverTimestamp() });
+    } catch (e) {
+      console.error("No se pudo enviar welcome email:", e);
+      // No interrumpas el login si falla el mail
+    }
+
+
   } else {
     // Si ya existe, NO toco role ni otros campos manuales
     // (solo actualizo updatedAt y relleno mínimos si faltan)
