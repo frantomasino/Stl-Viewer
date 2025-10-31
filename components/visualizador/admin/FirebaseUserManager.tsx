@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect ,useMemo} from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +46,9 @@ export function FirebaseUserManager() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<FirebaseUser | null>(null);
-  
+  const [sortAsc, setSortAsc] = useState(true);
+  const [hideInactive, setHideInactive] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -151,15 +153,38 @@ export function FirebaseUserManager() {
       .normalize("NFD")
       .replace(/\p{Diacritic}/gu, "");
 
+  // 1) filtro por búsqueda
   const filteredUsers = useMemo(() => {
     const q = norm(searchTerm.trim());
-    if (!q) return users; // si no hay búsqueda, devuelve todo
+    if (!q) return users;
     return users.filter((u) =>
       [u.name, u.email, u.department, u.role, u.status].some((field) =>
         norm(field).includes(q)
       )
     );
   }, [users, searchTerm]);
+  // 2) vista final: ocultar inactivos (opcional) + ordenar con inactivos al final
+  const viewUsers = useMemo(() => {
+    let arr = hideInactive
+      ? filteredUsers.filter((u) => u.status !== "inactive")
+      : [...filteredUsers];
+
+    // inactivos siempre al final, y luego ordenar por nombre asc/desc
+    const statusWeight = (u: (typeof arr)[number]) =>
+      u.status === "inactive" ? 1 : 0;
+
+    arr.sort((a, b) => {
+      const sw = statusWeight(a) - statusWeight(b);
+      if (sw !== 0) return sw; // empuja inactivos abajo
+
+      const byName = (a.name ?? "").localeCompare(b.name ?? "", undefined, {
+        sensitivity: "base",
+      });
+      return sortAsc ? byName : -byName;
+    });
+
+    return arr;
+  }, [filteredUsers, hideInactive, sortAsc]);
 
   return (
     <Card>
@@ -176,11 +201,36 @@ export function FirebaseUserManager() {
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end">
-            <Button onClick={loadUsers} variant="outline" size="sm" className="shrink-0">
+            <Button
+              onClick={loadUsers}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
+            {/* Orden por nombre (toggle asc/desc) */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setSortAsc((v) => !v)}
+              title={`Ordenar por nombre (${sortAsc ? "A→Z" : "Z→A"})`}
+            >
+              Ordenar: Nombre {sortAsc ? "A→Z" : "Z→A"}
+            </Button>
 
+            {/* Ocultar inactivos */}
+            <label className="flex items-center gap-2 text-sm select-none pl-2 pr-3 py-2 border rounded-md">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={hideInactive}
+                onChange={(e) => setHideInactive(e.target.checked)}
+              />
+              Inactivos
+            </label>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 {/* Mantengo deshabilitado Add User como en el base para no romper nada */}
@@ -290,7 +340,7 @@ export function FirebaseUserManager() {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredUsers.map((user) => (
+              {viewUsers.map((user) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
@@ -331,7 +381,7 @@ export function FirebaseUserManager() {
                   </div>
                 </div>
               ))}
-              {filteredUsers.length === 0 && (
+              {viewUsers.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No users found. Add your first user to get started.
                 </div>
