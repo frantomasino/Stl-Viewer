@@ -267,7 +267,7 @@ export function Contact() {
 
                 {status === "ok" && (
                   <p className="text-sm text-green-700">
-                    ✅ ¡Gracias! Te escribimos dentro de 24&nbsp;h hábiles.
+                    ✅ ¡Gracias! Te escribimos dentro de 48&nbsp;h hábiles.
                   </p>
                 )}
                 {status === "err" && (

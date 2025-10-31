@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,14 @@ import { UserRoleBadge } from "./UserRoleSelector";
 import type { UserRole } from "@/lib/firebase";
 
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, onSnapshot, documentId } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  onSnapshot,
+  documentId,
+} from "firebase/firestore";
 
 export interface User {
   id: string;
@@ -58,11 +66,14 @@ export function UsersTable({ users, projects }: UsersTableProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userList, setUserList] = useState<User[]>([]); // seguirás renderizando tu misma tabla, pero con userList
   const [refreshing, setRefreshing] = useState(false);
-const [hydrated, setHydrated] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   // 🔹 Conteo real desde Firestore: userId -> cantidad de memberships
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [countsLoading, setCountsLoading] = useState(false);
   const didLoadCountsRef = useRef(false); // 👈 NUEVO
+const [sortAsc, setSortAsc] = useState(true);
+  const [hideInactive, setHideInactive] = useState(false);
+
   // 🔹 Proyectos reales del usuario seleccionado (para el panel)
   const [selectedUserProjects, setSelectedUserProjects] = useState<Project[]>(
     []
@@ -71,19 +82,58 @@ const [hydrated, setHydrated] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const reloadTimer = useRef<number | null>(null);
 
-  const filteredUsers = userList.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.department &&
-        user.department.toLowerCase().includes(searchTerm.toLowerCase()))
+const norm = (s: unknown) =>
+  String(s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+
+// --- 1) Filtrado por búsqueda (si usás searchTerm; sino, dejá users tal cual) ---
+const filteredUsers = useMemo(() => {
+  const q = norm(searchTerm ?? "");
+  if (!q) return users;
+  return users.filter((u) =>
+    [u.name, u.email, u.department, u.role, u.status].some((field) =>
+      norm(field).includes(q)
+    )
   );
+}, [users, searchTerm]);
+
+const viewUsers = useMemo(() => {
+  // showInactive = true  -> muestro todos
+  // showInactive = false -> oculto inactivos
+    let arr = hideInactive
+      ? filteredUsers.filter((u) => u.status !== "inactive")
+      : [...filteredUsers];
+
+  // Inactivos al final siempre
+  const statusWeight = (u: typeof arr[number]) => (u.status === "inactive" ? 1 : 0);
+
+  // Clave de orden según sortBy
+
+
+  arr.sort((a, b) => {
+    // 1) empuja inactivos abajo
+    const sw = statusWeight(a) - statusWeight(b);
+    if (sw !== 0) return sw;
+
+    // 2) orden por clave (name/email)
+    const byName = (a.name ?? "").localeCompare(b.name ?? "", undefined, {
+        sensitivity: "base",
+      });
+      return sortAsc ? byName : -byName;
+  });
+
+  return arr;
+}, [filteredUsers, hideInactive, sortAsc]);
+
+
+
 
   // ⚠️ Mantengo tus helpers basados en ACL (fallback)
 
-
   const loadUsers = async () => {
-    return
+    return;
     setRefreshing(true);
     try {
       const snap = await getDocs(collection(db, "users"));
@@ -108,14 +158,17 @@ const [hydrated, setHydrated] = useState(false);
     return isNaN(date.getTime()) ? "" : date.toLocaleDateString("es-AR");
   };
 
-useEffect(() => {
-  const unsub = onSnapshot(collection(db, "users"), (snap) => {
-    const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as User[];
-    setUserList(list);
-    setHydrated(true);
-  });
-  return () => unsub();
-}, []);
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users"), (snap) => {
+      const list = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as any),
+      })) as User[];
+      setUserList(list);
+      setHydrated(true);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const debounced = () => {
@@ -228,6 +281,29 @@ useEffect(() => {
             className="pl-10"
           />
         </div>
+        <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => setSortAsc((v) => !v)}
+                        title={`Ordenar por nombre (${sortAsc ? "A→Z" : "Z→A"})`}
+                      >
+                        Ordenar: Nombre {sortAsc? "A→Z" : "Z→A"}
+                      </Button>
+          
+                      {/* Ocultar inactivos */}
+                      <label className="flex items-center gap-2 text-sm select-none pl-2 pr-3 py-2 border rounded-md">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={hideInactive}
+                          onChange={(e) => setHideInactive(e.target.checked)}
+                        />
+                        Ocultar inactivos
+                      </label>
+
+        </div>
 
         <div className="border rounded-lg space-y-2 max-h-[60vh] overflow-y-auto pr-1">
           <Table>
@@ -242,9 +318,9 @@ useEffect(() => {
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            
+
             <TableBody>
-              {filteredUsers.length === 0 ? (
+              {viewUsers.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
@@ -256,7 +332,7 @@ useEffect(() => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredUsers.map((user) => (
+                viewUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -300,13 +376,12 @@ useEffect(() => {
                 ))
               )}
             </TableBody>
-
           </Table>
         </div>
       </div>
 
       <Sheet open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <SheetContent >
+        <SheetContent>
           <SheetHeader>
             <SheetTitle>{selectedUser?.name}</SheetTitle>
             <SheetDescription>User details and project access</SheetDescription>
