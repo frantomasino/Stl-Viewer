@@ -196,7 +196,7 @@ export function FirebaseUserManager() {
               Firebase User Management
             </CardTitle>
             <CardDescription className="text-pretty">
-              Manage users stored in Firebase Firestore
+              Manage users stored in Firebase Firestore!
             </CardDescription>
           </div>
 
@@ -209,6 +209,7 @@ export function FirebaseUserManager() {
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
+
             </Button>
             {/* Orden por nombre (toggle asc/desc) */}
             <Button
