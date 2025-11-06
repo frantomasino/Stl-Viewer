@@ -40,13 +40,21 @@ import {
   getProjects,
   type FirebaseProject,
 } from "@/lib/firebase";
-import { collection, getDocs, query, where, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from "firebase/firestore";
 
 export function FirebaseProjectManager() {
   const [projects, setProjects] = useState<FirebaseProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<FirebaseProject | null>(null);
+  const [editingProject, setEditingProject] = useState<FirebaseProject | null>(
+    null
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
@@ -64,11 +72,37 @@ export function FirebaseProjectManager() {
       const fetchedProjects = await getProjects();
       setProjects(fetchedProjects);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load projects from Firebase", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to load projects from Firebase",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
+
+  function normalizeDropboxUrl(raw: string): string {
+    try {
+      let v = raw.trim();
+      if (!/^https?:\/\//i.test(v)) v = "https://" + v; // por si pegan sin protocolo
+      const url = new URL(v);
+
+      if (
+        url.hostname === "www.dropbox.com" ||
+        url.hostname === "dropbox.com"
+      ) {
+        url.hostname = "dl.dropboxusercontent.com";
+        // Si SOLO querés cambiar dominio, no toques params.
+        // Si algún día querés forzar descarga, podés hacer:
+        // url.searchParams.set("dl", "1")
+      }
+      return url.toString();
+    } catch {
+      // si no es una URL válida, devolvés lo original
+      return raw;
+    }
+  }
 
   useEffect(() => {
     loadProjects();
@@ -77,19 +111,42 @@ export function FirebaseProjectManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const normalized = {
+        ...formData,
+        path: normalizeDropboxUrl(formData.path),
+      };
       if (editingProject) {
-        await updateProject(editingProject.id!, formData);
-        toast({ title: "Success", description: "Project updated successfully" });
+        await updateProject(editingProject.id!, normalized);
+        toast({
+          title: "Success",
+          description: "Project updated successfully",
+        });
       } else {
-        await createProject(formData);
-        toast({ title: "Success", description: "Project created successfully" });
+        await createProject(normalized);
+        toast({
+          title: "Success",
+          description: "Project created successfully",
+        });
       }
       setIsDialogOpen(false);
       setEditingProject(null);
-      setFormData({ name: "", description: "", owner: "", path: "", status: "activo", type: "" });
+      setFormData({
+        name: "",
+        description: "",
+        owner: "",
+        path: "",
+        status: "activo",
+        type: "",
+      });
       loadProjects();
     } catch (error) {
-      toast({ title: "Error", description: `Failed to ${editingProject ? "update" : "create"} project`, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: `Failed to ${
+          editingProject ? "update" : "create"
+        } project`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -111,7 +168,10 @@ export function FirebaseProjectManager() {
 
     try {
       // 1) Borrar memberships asociados al proyecto
-      const q = query(collection(db, "memberships"), where("projectId", "==", projectId));
+      const q = query(
+        collection(db, "memberships"),
+        where("projectId", "==", projectId)
+      );
       const snap = await getDocs(q);
 
       if (!snap.empty) {
@@ -128,10 +188,17 @@ export function FirebaseProjectManager() {
       // 2) Borrar el proyecto
       await deleteProject(projectId);
 
-      toast({ title: "Success", description: "Project and related memberships deleted" });
+      toast({
+        title: "Success",
+        description: "Project and related memberships deleted",
+      });
       loadProjects();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to delete project", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to delete project",
+        variant: "destructive",
+      });
       console.error(error);
     }
   };
@@ -165,6 +232,9 @@ export function FirebaseProjectManager() {
         return "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200";
       case "traumatología":
         return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+      case "cirugía general":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+
       case "maqueta anatómica":
         return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
       default:
@@ -201,13 +271,20 @@ export function FirebaseProjectManager() {
       <CardHeader className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="min-w-0">
-            <CardTitle className="text-balance leading-tight">Firebase Project Management</CardTitle>
+            <CardTitle className="text-balance leading-tight">
+              Firebase Project Management
+            </CardTitle>
             <CardDescription className="text-pretty">
               Manage projects stored in Firebase Firestore
             </CardDescription>
           </div>
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end">
-            <Button onClick={loadProjects} variant="outline" size="sm" className="shrink-0">
+            <Button
+              onClick={loadProjects}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
@@ -217,7 +294,14 @@ export function FirebaseProjectManager() {
                   className="shrink-0"
                   onClick={() => {
                     setEditingProject(null);
-                    setFormData({ name: "", description: "", owner: "", path: "", status: "activo", type: "" });
+                    setFormData({
+                      name: "",
+                      description: "",
+                      owner: "",
+                      path: "",
+                      status: "activo",
+                      type: "",
+                    });
                   }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -226,72 +310,134 @@ export function FirebaseProjectManager() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>{editingProject ? "Edit Project" : "Add New Project"}</DialogTitle>
-                  <DialogDescription>{editingProject ? "Update project information" : "Create a new project in Firebase"}</DialogDescription>
+                  <DialogTitle>
+                    {editingProject ? "Edit Project" : "Add New Project"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingProject
+                      ? "Update project information"
+                      : "Create a new project in Firebase"}
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Name</Label>
-                      <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        required
+                      />
                     </div>
                     <div>
                       <Label htmlFor="owner">Owner</Label>
-                      <Input id="owner" value={formData.owner} onChange={(e) => setFormData({ ...formData, owner: e.target.value })} required />
+                      <Input
+                        id="owner"
+                        value={formData.owner}
+                        onChange={(e) =>
+                          setFormData({ ...formData, owner: e.target.value })
+                        }
+                        required
+                      />
                     </div>
                     <div className="sm:col-span-2">
                       <Label htmlFor="description">Description</Label>
-                      <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
+                        }
+                      />
                     </div>
                     <div className="sm:col-span-2">
-                      <Label htmlFor="path">Path</Label>
-                      <Input id="path" value={formData.path} onChange={(e) => setFormData({ ...formData, path: e.target.value })} />
+                      <Label htmlFor="path">Path (URL)</Label>
+                      <Input
+                        id="path"
+                        type="url"
+                        value={formData.path}
+                        onChange={(e) =>
+                          setFormData({ ...formData, path: e.target.value })
+                        }
+                        onBlur={(e) => {
+                          const fixed = normalizeDropboxUrl(e.target.value);
+                          if (fixed !== e.target.value) {
+                            setFormData((p) => ({ ...p, path: fixed }));
+                          }
+                        }}
+                        placeholder="https://..."
+                        required
+                      />
                     </div>
-{/* Status */}
-<div>
-  <Label htmlFor="status">Status</Label>
-  <Select
-    value={formData.status}
-    onValueChange={(value) => setFormData({ ...formData, status: value })}
-  >
-    <SelectTrigger id="status">
-      <SelectValue placeholder="Select status" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="Activo">Activo</SelectItem>
-      <SelectItem value="En progreso">En progreso</SelectItem>
-      <SelectItem value="Completado">Completado</SelectItem>
-      <SelectItem value="Inactivo">Inactivo</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
+                    {/* Status */}
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, status: value })
+                        }
+                      >
+                        <SelectTrigger id="status">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Activo">Activo</SelectItem>
+                          <SelectItem value="En progreso">
+                            En progreso
+                          </SelectItem>
+                          <SelectItem value="Completado">Completado</SelectItem>
+                          <SelectItem value="Inactivo">Inactivo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-{/* Type */}
-<div>
-  <Label htmlFor="type">Type</Label>
-  <Select
-    value={formData.type}
-    onValueChange={(value) => setFormData({ ...formData, type: value })}
-  >
-    <SelectTrigger id="type">
-      <SelectValue placeholder="Select type" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="Cardiología">Cardiología</SelectItem>
-      <SelectItem value="Neurocirugía">Neurocirugía</SelectItem>
-      <SelectItem value="Neurología">Neurología</SelectItem>
-      <SelectItem value="Oncología">Oncología</SelectItem>
-      <SelectItem value="Pediatría">Pediatría</SelectItem>
-      <SelectItem value="Traumatología">Traumatología</SelectItem>
-      <SelectItem value="Maqueta anatómica">Maqueta anatómica</SelectItem>
-      <SelectItem value="Otro">Otro</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
-
+                    {/* Type */}
+                    <div>
+                      <Label htmlFor="type">Type</Label>
+                      <Select
+                        value={formData.type}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, type: value })
+                        }
+                      >
+                        <SelectTrigger id="type">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Cardiología">
+                            Cardiología
+                          </SelectItem>
+                          <SelectItem value="Neurocirugía">
+                            Neurocirugía
+                          </SelectItem>
+                          <SelectItem value="Neurología">Neurología</SelectItem>
+                          <SelectItem value="Oncología">Oncología</SelectItem>
+                          <SelectItem value="Pediatría">Pediatría</SelectItem>
+                          <SelectItem value="Traumatología">
+                            Traumatología
+                          </SelectItem>
+                                                    <SelectItem value="Cirugía General">
+                            Cirugía General
+                          </SelectItem>
+                          <SelectItem value="Maqueta anatómica">
+                            Maqueta anatómica
+                          </SelectItem>
+                          <SelectItem value="Otro">Otro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit">{editingProject ? "Update Project" : "Create Project"}</Button>
+                    <Button type="submit">
+                      {editingProject ? "Update Project" : "Create Project"}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -321,36 +467,65 @@ export function FirebaseProjectManager() {
           ) : (
             <div className="space-y-4">
               {filteredProjects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                       <h3 className="font-medium truncate">{project.name}</h3>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(project.status)}`}>{project.status}</span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${getStatusColor(
+                          project.status
+                        )}`}
+                      >
+                        {project.status}
+                      </span>
                       {project.type && (
-                        <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(project.type)}`}>{project.type}</span>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${getTypeColor(
+                            project.type
+                          )}`}
+                        >
+                          {project.type}
+                        </span>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
                       {project.description || "No description"}
                     </p>
                     <div className="text-xs text-muted-foreground mt-1">
-                      <span className="mr-3">Owner: {project.owner || "N/A"}</span>
-                      <span className="mr-3">Created: {formatDate(project.created)}</span>
+                      <span className="mr-3">
+                        Owner: {project.owner || "N/A"}
+                      </span>
+                      <span className="mr-3">
+                        Created: {formatDate(project.created)}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex gap-2 shrink-0 pl-3">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(project)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(project)}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(project.id!)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(project.id!)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               ))}
               {filteredProjects.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">No projects found. Add your first project to get started.</div>
+                <div className="text-center py-8 text-muted-foreground">
+                  No projects found. Add your first project to get started.
+                </div>
               )}
             </div>
           )}
