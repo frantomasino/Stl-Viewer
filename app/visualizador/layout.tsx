@@ -5,7 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "@/components/theme-provider";
 // import "@/globals.css";
 import TermsConsentGate from "@/components/visualizador/TermsConsentGate"; // 👈 importar
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Visualizador | LAMBDA 3D",
@@ -16,9 +16,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`min-h-dvh font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-         <TermsConsentGate> {children}</TermsConsentGate>
+      <body
+        className={`min-h-dvh font-sans ${GeistSans.variable} ${GeistMono.variable}`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TermsConsentGate> {children}</TermsConsentGate>
         </ThemeProvider>
         <Analytics />
       </body>
