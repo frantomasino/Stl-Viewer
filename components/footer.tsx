@@ -48,6 +48,16 @@ export function Footer() {
                   Desarrollos 3D personalizados
                 </a>
               </li>
+              <li>
+                <a
+                  href="https://lambda7.mitiendanube.com/educacion/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-background transition-colors"
+                >
+                  Nuestra tienda
+                </a>
+              </li>
             </ul>
           </div>
 
