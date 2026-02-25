@@ -17,6 +17,7 @@ export function Navbar() {
     { name: "Productos", href: "#productos", external: false },
     { name: "Contacto", href: "#contacto", external: false },
     { name: "Demo", href: "/demo", external: false },
+    { name: "Tienda", href: "https://lambda7.mitiendanube.com/educacion/", external: true },
   ]
 
   return (
@@ -40,24 +41,26 @@ export function Navbar() {
   <div className="hidden md:flex flex-1 justify-center">
     <div className="flex items-center space-x-8">
       {navItems.map((item) =>
-        item.href.startsWith("/") ? (
-          <Link
-            key={item.name}
-            href={item.href}
-            className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors duration-200"
-          >
-            {item.name}
-          </Link>
-        ) : (
-          <a
-            key={item.name}
-            href={item.href}
-            className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors duration-200"
-          >
-            {item.name}
-          </a>
-        )
-      )}
+  item.href.startsWith("/") ? (
+    <Link
+      key={item.name}
+      href={item.href}
+      className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors duration-200"
+    >
+      {item.name}
+    </Link>
+  ) : (
+    <a
+      key={item.name}
+      href={item.href}
+      target={item.external ? "_blank" : undefined}
+      rel={item.external ? "noopener noreferrer" : undefined}
+      className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors duration-200"
+    >
+      {item.name}
+    </a>
+  )
+)}
     </div>
   </div>
 
@@ -105,14 +108,16 @@ export function Navbar() {
               {item.name}
             </Link>
           ) : (
-            <a
-              key={item.name}
-              href={item.href}
-              className="text-card-foreground hover:text-primary text-lg font-medium transition-colors duration-200"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.name}
-            </a>
+     <a
+  key={item.name}
+  href={item.href}
+  target={item.external ? "_blank" : undefined}
+  rel={item.external ? "noopener noreferrer" : undefined}
+  className="text-card-foreground hover:text-primary text-lg font-medium transition-colors duration-200"
+  onClick={() => setIsMenuOpen(false)}
+>
+  {item.name}
+</a>
           )
         )}
       </nav>
