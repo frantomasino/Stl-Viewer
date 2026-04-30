@@ -13,8 +13,8 @@ import { Card, CardContent } from "@/components/ui/card";
 const team = [
   {
     name: "Valeria",
-    role: "Fundadora",
-    area: "Licenciada en Producción de Bioimágenes",
+    role: "Licenciada en Producción de Bioimágenes",
+    area: "Fundadora",
     image: "/img/equipo/cv_valeria.png",
          imagePosition: "object-[60%_38%]",
     bio: "Profesional vinculada al desarrollo de biomodelos anatómicos aplicados a planificación quirúrgica. Su experiencia en entornos hospitalarios permite orientar cada proyecto a necesidades reales del equipo médico, integrando criterio clínico, segmentación de imágenes médicas y fabricación digital.",
