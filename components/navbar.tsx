@@ -11,10 +11,10 @@ export function Navbar() {
 
   const navItems = [
     { name: "Inicio", href: "#inicio", external: false },
-    { name: "Servicios", href: "#servicios", external: false },
-    // { name: "Casos", href: "#casos", external: false },
-    { name: "Nosotros", href: "#nosotros", external: false },
+    // { name: "Proceso", href: "#proceso", external: false },
+    { name: "Casos", href: "#casos", external: false },
     { name: "Productos", href: "#productos", external: false },
+    { name: "Nosotros", href: "#nosotros", external: false },
     { name: "Contacto", href: "#contacto", external: false },
     { name: "Demo", href: "/demo", external: false },
     {

@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/navbar"
 import { Hero } from "@/components/hero"
+import { Process } from "@/components/process"
 import { Services } from "@/components/services"
 import { Benefits } from "@/components/benefits"
 import { Cases } from "@/components/cases"
@@ -12,7 +13,8 @@ export default function Home() {
     <main className="min-h-screen">
       <Navbar />
       <Hero />
-      <Services />
+      <Process />
+      {/* <Services /> */}
       <Cases />
       <Benefits />
       <About />

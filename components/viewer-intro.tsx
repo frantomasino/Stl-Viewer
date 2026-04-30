@@ -4,15 +4,15 @@ import { ArrowRight, ArrowLeft, Play } from "lucide-react";
 
 export function ViewerIntro() {
   return (
-    <section className="py-24 lg:py-32 bg-gradient-to-b from-background to-muted/30">
+    <section className="py-20 lg:py-24 bg-gradient-to-b from-background to-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Botón regresar arriba a la izquierda */}
         <div className="mb-8">
-          <Button
-            variant="outline"
-            asChild
-            className="rounded-full px-6 py-2 text-sm font-medium"
-          >
+         <Button
+              variant="ghost"
+              asChild
+              className="px-0 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-transparent"
+            >
             <Link href="/">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver al inicio
@@ -67,6 +67,9 @@ export function ViewerIntro() {
             ></iframe>
           </div>
         </div>
+        
+        
+        
       </div>
     </section>
   );

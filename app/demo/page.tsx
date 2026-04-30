@@ -10,6 +10,7 @@ export default function VisualizadorPage() {
   return (
     <main className="min-h-screen">
       <ViewerIntro />
+      
     </main>
   )
 }
