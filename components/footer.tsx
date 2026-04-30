@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Instagram, Linkedin, ShoppingBag, Box } from "lucide-react";
+
 export function Footer() {
   return (
     <footer className="bg-foreground text-background py-12">
@@ -14,48 +16,81 @@ export function Footer() {
               height={40}
               className="h-14 w-auto brightness-0 invert"
             />
+
             <p className="text-background/80 leading-relaxed max-w-md">
-              Innovación 3D para la salud y la educación. Transformamos ideas en
-              soluciones tangibles mediante biomodelos e impresión 3D.
+              Biomodelos anatómicos físicos y digitales para planificación
+              quirúrgica, comunicación médica, educación y entrenamiento.
             </p>
+
+            <div className="flex items-center gap-3 pt-2">
+              <a
+                href="https://lambda7.mitiendanube.com/educacion/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Tienda Lambda 3D"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
+              >
+                <ShoppingBag className="h-5 w-5" />
+              </a>
+
+              <a
+                href="https://sketchfab.com/lambda3d"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Portfolio 3D en Sketchfab"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
+              >
+                <Box className="h-5 w-5" />
+              </a>
+
+              <a
+                href="https://www.instagram.com/lambda3d/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram de Lambda 3D"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+
+              <a
+                href="https://ar.linkedin.com/company/lambda3d"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn de Lambda 3D"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+            </div>
           </div>
 
           {/* Services */}
           <div className="space-y-4">
             <h4 className="font-semibold text-background">Servicios</h4>
+
             <ul className="space-y-2 text-background/80">
               <li>
-                <a
-                  href="#servicios"
-                  className="hover:text-background transition-colors"
-                >
+                <a href="#productos" className="hover:text-background transition-colors">
                   Biomodelos quirúrgicos
                 </a>
               </li>
+
               <li>
-                <a
-                  href="#servicios"
-                  className="hover:text-background transition-colors"
-                >
+                <a href="#productos" className="hover:text-background transition-colors">
+                  Segmentación 3D
+                </a>
+              </li>
+
+              <li>
+                <a href="#productos" className="hover:text-background transition-colors">
                   Maquetas educativas
                 </a>
               </li>
+
               <li>
-                <a
-                  href="#servicios"
-                  className="hover:text-background transition-colors"
-                >
-                  Desarrollos 3D personalizados
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://lambda7.mitiendanube.com/educacion/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-background transition-colors"
-                >
-                  Nuestra tienda
+                <a href="#productos" className="hover:text-background transition-colors">
+                  Desarrollos personalizados
                 </a>
               </li>
             </ul>
@@ -64,28 +99,28 @@ export function Footer() {
           {/* Company */}
           <div className="space-y-4">
             <h4 className="font-semibold text-background">Empresa</h4>
+
             <ul className="space-y-2 text-background/80">
               <li>
-                <a
-                  href="#nosotros"
-                  className="hover:text-background transition-colors"
-                >
+                <a href="#nosotros" className="hover:text-background transition-colors">
                   Sobre nosotros
                 </a>
               </li>
+
               <li>
-                <a
-                  href="#casos"
-                  className="hover:text-background transition-colors"
-                >
-                  Casos de éxito
+                <Link href="/equipo" className="hover:text-background transition-colors">
+                  Equipo
+                </Link>
+              </li>
+
+              <li>
+                <a href="#casos" className="hover:text-background transition-colors">
+                  Casos clínicos
                 </a>
               </li>
+
               <li>
-                <a
-                  href="#contacto"
-                  className="hover:text-background transition-colors"
-                >
+                <a href="#contacto" className="hover:text-background transition-colors">
                   Contacto
                 </a>
               </li>
@@ -107,6 +142,7 @@ export function Footer() {
             >
               Privacidad
             </Link>
+
             <Link
               href="/terminos-condiciones"
               className="hover:text-background transition-colors"

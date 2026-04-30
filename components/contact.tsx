@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
-import type React from "react";
-import Link from "next/link";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import type React from "react"
+import Link from "next/link"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Mail,
   MapPin,
@@ -15,113 +15,131 @@ import {
   Smartphone,
   Linkedin,
   MessageSquare,
-} from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+} from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 
-// Import correcto según tu estructura
-import { sendContactMessage } from "../lib/firebase";
+import { sendContactMessage } from "../lib/firebase"
+
+const initialFormData = {
+  nombre: "",
+  email: "",
+  telefono: "",
+  mensaje: "",
+  tipo: "Biomodelo personalizado",
+}
 
 export function Contact() {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    email: "",
-    telefono: "",
-    mensaje: "",
-    tipo: "Biomodelo / Planificación",
-  });
-
-  const [accepted, setAccepted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<null | "ok" | "err">(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [formData, setFormData] = useState(initialFormData)
+  const [accepted, setAccepted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<null | "ok" | "err">(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  ) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!accepted) return;
-    setLoading(true);
-    setStatus(null);
-    setErrorMsg(null);
+    e.preventDefault()
 
-    try {
-      // Prepend del tipo de consulta al mensaje (tu API actual no tiene campo "tipo")
-      const mensajeCompuesto =
-        `[Tipo: ${formData.tipo}] ${formData.mensaje}`.trim();
+    if (!accepted || loading) return
 
-      await sendContactMessage({
-        name: formData.nombre.trim(),
-        email: formData.email.trim(),
-        phone: formData.telefono.trim(),
-        message: mensajeCompuesto,
-      });
+    setLoading(true)
+    setStatus(null)
+    setErrorMsg(null)
 
-      setStatus("ok");
-      setFormData({
-        nombre: "",
-        email: "",
-        telefono: "",
-        mensaje: "",
-        tipo: "Biomodelo / Planificación",
-      });
-      setAccepted(false);
-    } catch (err: any) {
-      console.error(err);
-      setStatus("err");
-      setErrorMsg(err?.message ?? "No se pudo enviar el mensaje.");
-    } finally {
-      setLoading(false);
-    }
-    try {
-  const res = await fetch("/api/contact/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    const payload = {
       nombre: formData.nombre.trim(),
       email: formData.email.trim(),
       telefono: formData.telefono.trim(),
       mensaje: formData.mensaje.trim(),
-      tipo: formData.tipo, // ya lo tenés en tu estado
-    }),
-  });
+      tipo: formData.tipo,
+    }
 
-  if (!res.ok) {
-    // No rompemos la UX si falla el mail, solo avisamos en consola
-    console.error("No se pudo enviar el correo (Resend).");
+    try {
+      const mensajeCompuesto = `[Tipo: ${payload.tipo}] ${payload.mensaje}`
+
+      await sendContactMessage({
+        name: payload.nombre,
+        email: payload.email,
+        phone: payload.telefono,
+        message: mensajeCompuesto,
+      })
+
+      try {
+        const res = await fetch("/api/contact/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+
+        if (!res.ok) {
+          console.error("No se pudo enviar el correo por /api/contact.")
+        }
+      } catch (mailError) {
+        console.error("Fallo de red al enviar correo:", mailError)
+      }
+
+      setStatus("ok")
+      setFormData(initialFormData)
+      setAccepted(false)
+    } catch (err: any) {
+      console.error(err)
+      setStatus("err")
+      setErrorMsg(err?.message ?? "No se pudo enviar el mensaje.")
+    } finally {
+      setLoading(false)
+    }
   }
-} catch (e) {
-  console.error("Fallo de red/Resend:", e);
+  const getWhatsappUrl = () => {
+  const message = [
+    "Hola Lambda 3D. Me gustaría consultar por un proyecto 3D.",
+    "",
+    `Tipo de consulta: ${formData.tipo}`,
+    formData.nombre.trim() ? `Nombre: ${formData.nombre.trim()}` : "",
+    formData.email.trim() ? `Email: ${formData.email.trim()}` : "",
+    formData.telefono.trim() ? `Teléfono: ${formData.telefono.trim()}` : "",
+    formData.mensaje.trim()
+      ? `Descripción del caso: ${formData.mensaje.trim()}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  return `https://wa.me/5492346300627?text=${encodeURIComponent(message)}`
 }
-  };
-  
 
   return (
     <section id="contacto" className="py-24 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-balance">
-            Contanos tu proyecto
+            Hablemos de tu caso
           </h2>
+
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Respondemos dentro de 48&nbsp;hs hábiles. Si es urgente, escribinos
-            por{" "}
+            Consultanos por biomodelos personalizados, segmentación 3D,
+            maquetas educativas, proyectos institucionales o alianzas con
+            empresas médicas. Si necesitás una respuesta rápida, también podés
+            escribirnos por{" "}
             <Link
-              href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20contactarlos%20por%20un%20proyecto%203D."
+              href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20consultar%20por%20un%20proyecto%203D."
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 font-medium text-green-600 hover:text-green-700"
             >
               WhatsApp
             </Link>
+            .
           </p>
         </div>
 
@@ -129,8 +147,9 @@ export function Contact() {
           {/* Contact Form */}
           <Card className="border-0 bg-background">
             <CardHeader>
-              <CardTitle className="text-2xl">Enviános un mensaje</CardTitle>
+              <CardTitle className="text-2xl">Enviar consulta</CardTitle>
             </CardHeader>
+
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -147,6 +166,7 @@ export function Contact() {
                       className="rounded-xl"
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -175,27 +195,40 @@ export function Contact() {
                       placeholder="+54 9 2346 30-0627"
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label>Tipo de consulta</Label>
                     <Select
                       value={formData.tipo}
                       onValueChange={(v) =>
-                        setFormData((p) => ({ ...p, tipo: v }))
+                        setFormData((prev) => ({ ...prev, tipo: v }))
                       }
                     >
                       <SelectTrigger className="rounded-xl">
                         <SelectValue placeholder="Elegí una opción" />
                       </SelectTrigger>
+
                       <SelectContent>
-                        <SelectItem value="Biomodelo / Planificación">
-                          Biomodelo / Planificación
+                        <SelectItem value="Biomodelo personalizado">
+                          Biomodelo personalizado
                         </SelectItem>
-                        <SelectItem value="Impresión 3D">
-                          Impresión 3D
+
+                        <SelectItem value="Segmentación 3D de imágenes médicas">
+                          Segmentación 3D de imágenes médicas
                         </SelectItem>
-                        <SelectItem value="Académico / Maquetas">
-                          Académico / Maquetas
+
+                        <SelectItem value="Maquetas educativas">
+                          Maquetas educativas
                         </SelectItem>
+
+                        <SelectItem value="Consulta institucional">
+                          Consulta institucional
+                        </SelectItem>
+
+                        <SelectItem value="Distribuidores / alianzas">
+                          Distribuidores / alianzas
+                        </SelectItem>
+
                         <SelectItem value="Otro">Otro</SelectItem>
                       </SelectContent>
                     </Select>
@@ -213,7 +246,7 @@ export function Contact() {
                     required
                     maxLength={5000}
                     className="rounded-xl resize-none"
-                    placeholder="Objetivo, plazos y material disponible (DICOM, STL, etc.)."
+                    placeholder="Contanos el objetivo del proyecto, especialidad, plazos y material disponible: DICOM, STL, imágenes, referencias o necesidad institucional."
                   />
                 </div>
 
@@ -223,6 +256,7 @@ export function Contact() {
                     checked={accepted}
                     onCheckedChange={(v) => setAccepted(Boolean(v))}
                   />
+
                   <label
                     htmlFor="consent"
                     className="text-sm text-muted-foreground"
@@ -255,7 +289,7 @@ export function Contact() {
                     className="rounded-2xl py-3"
                   >
                     <Link
-                      href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20contactarlos%20por%20un%20proyecto%203D."
+                      href={getWhatsappUrl()}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -267,9 +301,11 @@ export function Contact() {
 
                 {status === "ok" && (
                   <p className="text-sm text-green-700">
-                    ✅ ¡Gracias! Te escribimos dentro de 48&nbsp;h hábiles.
+                    ✅ ¡Gracias! Recibimos tu consulta y te vamos a responder a
+                    la brevedad.
                   </p>
                 )}
+
                 {status === "err" && (
                   <p className="text-sm text-red-700">
                     ❌ Hubo un problema. {errorMsg}
@@ -285,11 +321,13 @@ export function Contact() {
               <h3 className="text-2xl font-semibold">
                 Información de contacto
               </h3>
+
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                     <Mail className="h-6 w-6 text-primary" />
                   </div>
+
                   <div>
                     <p className="font-medium">Email</p>
                     <p className="text-muted-foreground">
@@ -302,6 +340,7 @@ export function Contact() {
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                     <Linkedin className="h-6 w-6 text-primary" />
                   </div>
+
                   <div>
                     <p className="font-medium">LinkedIn</p>
                     <p className="text-muted-foreground">
@@ -309,7 +348,6 @@ export function Contact() {
                         href="https://ar.linkedin.com/company/lambda3d"
                         target="_blank"
                         rel="noopener noreferrer"
-                        // className="underline"
                       >
                         Lambda 3D
                       </Link>
@@ -321,13 +359,13 @@ export function Contact() {
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                     <Smartphone className="h-6 w-6 text-primary" />
                   </div>
+
                   <div>
                     <p className="font-medium">Teléfono</p>
                     <Link
-                      href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20contactarlos%20por%20un%20proyecto%203D."
+                      href="https://wa.me/5492346300627?text=Hola%20Lambda%203D.%20Me%20gustaría%20consultar%20por%20un%20proyecto%203D."
                       target="_blank"
                       rel="noopener noreferrer"
-                      // className="underline"
                     >
                       +54 9 2346 30-0627
                     </Link>
@@ -338,10 +376,11 @@ export function Contact() {
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                     <MapPin className="h-6 w-6 text-primary" />
                   </div>
+
                   <div>
                     <p className="font-medium">Ubicación</p>
                     <p className="text-muted-foreground">
-                      Chivilcoy, Argentina
+                      Chivilcoy, Buenos Aires, Argentina
                     </p>
                   </div>
                 </div>
@@ -352,12 +391,14 @@ export function Contact() {
             <Card className="border-0 bg-primary/5">
               <CardContent className="p-6">
                 <h4 className="font-semibold mb-2">
-                  ¿Tenés un proyecto en mente?
+                  Para médicos, instituciones y empresas
                 </h4>
+
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Transformamos imágenes médicas en modelos 3D para
-                  planificación y docencia. Contanos tu objetivo y material
-                  disponible y te asesoramos sin costo.
+                  Podemos acompañar proyectos puntuales, biomodelos
+                  personalizados, desarrollos educativos, consultas
+                  institucionales y posibles alianzas con empresas de tecnología
+                  médica o distribuidores.
                 </p>
               </CardContent>
             </Card>
@@ -365,5 +406,5 @@ export function Contact() {
         </div>
       </div>
     </section>
-  );
+  )
 }
