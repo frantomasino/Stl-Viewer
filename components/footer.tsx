@@ -26,6 +26,7 @@ export function Footer() {
               <a
                 href="https://lambda7.mitiendanube.com/educacion/"
                 target="_blank"
+                title="Tienda"
                 rel="noopener noreferrer"
                 aria-label="Tienda Lambda 3D"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
@@ -36,6 +37,7 @@ export function Footer() {
               <a
                 href="https://sketchfab.com/lambda3d"
                 target="_blank"
+                title="Portfolio 3D"
                 rel="noopener noreferrer"
                 aria-label="Portfolio 3D en Sketchfab"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
@@ -47,6 +49,7 @@ export function Footer() {
                 href="https://www.instagram.com/lambda3d/"
                 target="_blank"
                 rel="noopener noreferrer"
+                title="Instagram"
                 aria-label="Instagram de Lambda 3D"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
               >
@@ -57,6 +60,8 @@ export function Footer() {
                 href="https://ar.linkedin.com/company/lambda3d"
                 target="_blank"
                 rel="noopener noreferrer"
+                title="LinkedIn"
+
                 aria-label="LinkedIn de Lambda 3D"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-background/80 transition-colors hover:bg-background/20 hover:text-background"
               >
